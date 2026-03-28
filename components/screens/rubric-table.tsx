@@ -13,32 +13,41 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 import type { RubricCriterion } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface RubricTableProps {
   rubric: RubricCriterion[];
+  originalRubric?: RubricCriterion[];
   onRubricChange: (rubric: RubricCriterion[]) => void;
   onApprove: () => void;
 }
 
-export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTableProps) {
+export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
 
   useEffect(() => {
     setLocalRubric(rubric);
   }, [rubric]);
 
-  const weightSum = localRubric.reduce((sum, c) => sum + c.weight, 0);
-  const isWeightValid = Math.abs(weightSum - 1.0) < 0.01;
+  // Weight is stored internally as decimal (0.2) but displayed as percentage (20)
+  const weightSumDecimal = localRubric.reduce((sum, c) => sum + c.weight, 0);
+  const weightSumPercent = Math.round(weightSumDecimal * 100);
+  const isWeightValid = Math.abs(weightSumPercent - 100) <= 1;
 
   const updateCriterion = (id: string, field: keyof RubricCriterion, value: string | number) => {
-    const updated = localRubric.map(c => 
+    const updated = localRubric.map(c =>
       c.id === id ? { ...c, [field]: value } : c
     );
     setLocalRubric(updated);
     onRubricChange(updated);
+  };
+
+  // Handle weight change: user enters percentage (e.g. 20), we store as decimal (0.2)
+  const updateWeight = (id: string, percentValue: number) => {
+    const decimalValue = Math.round(percentValue) / 100;
+    updateCriterion(id, 'weight', decimalValue);
   };
 
   const addCriterion = () => {
@@ -61,14 +70,23 @@ export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTablePr
     onRubricChange(updated);
   };
 
+  const resetRubric = () => {
+    if (originalRubric && originalRubric.length > 0) {
+      setLocalRubric(originalRubric);
+      onRubricChange(originalRubric);
+    }
+  };
+
+  const hasChanges = originalRubric && JSON.stringify(localRubric) !== JSON.stringify(originalRubric);
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="font-display text-xl">Evaluation Rubric</CardTitle>
+            <CardTitle className="font-display text-xl">Screening Rubric</CardTitle>
             <CardDescription>
-              Review and customize the scoring criteria. Weights must sum to 1.0.
+              Review and customize the scoring criteria. Weights must sum to 100%.
             </CardDescription>
           </div>
           <Badge
@@ -83,19 +101,19 @@ export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTablePr
             ) : (
               <AlertCircle className="h-3 w-3" />
             )}
-            Weight Sum: {weightSum.toFixed(2)}
+            Weight: {weightSumPercent}%
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Criterion</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="w-[100px] text-center">Max Score</TableHead>
-                <TableHead className="w-[120px] text-center">Weight</TableHead>
+                <TableHead className="w-[120px] text-center">Weight %</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -130,10 +148,10 @@ export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTablePr
                     <Input
                       type="number"
                       min={0}
-                      max={1}
-                      step={0.05}
-                      value={criterion.weight}
-                      onChange={(e) => updateCriterion(criterion.id, 'weight', parseFloat(e.target.value) || 0)}
+                      max={100}
+                      step={5}
+                      value={Math.round(criterion.weight * 100)}
+                      onChange={(e) => updateWeight(criterion.id, parseFloat(e.target.value) || 0)}
                       className="h-8 text-center"
                     />
                   </TableCell>
@@ -155,10 +173,18 @@ export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTablePr
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <Button variant="outline" onClick={addCriterion}>
-            <Plus className="h-4 w-4" />
-            Add Criterion
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={addCriterion}>
+              <Plus className="h-4 w-4" />
+              Add Criterion
+            </Button>
+            {hasChanges && (
+              <Button variant="outline" onClick={resetRubric} className="text-muted-foreground hover:text-foreground">
+                <RotateCcw className="h-4 w-4" />
+                Reset
+              </Button>
+            )}
+          </div>
 
           <Button
             className="bg-electric-blue hover:bg-deep-blue"
@@ -171,7 +197,7 @@ export function RubricTable({ rubric, onRubricChange, onApprove }: RubricTablePr
 
         {!isWeightValid && (
           <p className="mt-3 text-sm text-destructive">
-            Please adjust the weights so they sum to 1.0 (currently {weightSum.toFixed(2)})
+            Adjust weights to sum to 100% (currently {weightSumPercent}%)
           </p>
         )}
       </CardContent>

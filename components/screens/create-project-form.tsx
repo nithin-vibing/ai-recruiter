@@ -64,7 +64,7 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating }: 
             <Textarea
               id="job-description"
               placeholder="Paste the full job description here — responsibilities, requirements, qualifications, nice-to-haves. The more detail, the better the rubric."
-              className="min-h-[240px] resize-y font-mono text-sm"
+              className="min-h-[160px] resize-y font-mono text-sm"
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
             />
@@ -79,12 +79,12 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating }: 
             {isGenerating ? (
               <>
                 <Spinner className="h-4 w-4" />
-                Generating Rubric...
+                Creating Rubric...
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Generate Rubric with AI
+                Create Screening Rubric
               </>
             )}
           </Button>

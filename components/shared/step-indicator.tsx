@@ -9,9 +9,9 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { number: 1, label: 'Define Rubric' },
+  { number: 1, label: 'Define Criteria' },
   { number: 2, label: 'Upload & Screen' },
-  { number: 3, label: 'Ranked Results' },
+  { number: 3, label: 'Review & Shortlist' },
 ];
 
 interface StepIndicatorProps {
