@@ -23,31 +23,26 @@ export default function CreateProjectPage() {
       // Call n8n Workflow 1 — creates project + generates rubric in Supabase
       const result = await generateRubric(data);
 
-      // Extract projectId from the response
-      // n8n returns the project data — find the project ID
-      const pid = result.projectId || result.id || result[0]?.project_id;
+      // n8n returns an array of rubric items, each with project_id
+      // Extract projectId from the first item
+      const rubricArray = Array.isArray(result) ? result : [result];
+      const pid = rubricArray[0]?.project_id;
+
       if (pid) {
         setProjectId(pid);
       }
 
-      // Fetch the rubric from Supabase (n8n already saved it)
-      if (pid) {
-        const rubricData = await fetchRubric(pid);
-        const mappedRubric: RubricCriterion[] = rubricData.map((row: Record<string, unknown>) => ({
-          id: row.id as string,
-          name: row.criterion as string,
-          description: (row.description as string) || '',
-          maxScore: (row.max_score as number) || 10,
-          weight: Number(row.weight) || 1,
-        }));
-        setLocalRubric(mappedRubric);
-        setShowRubric(true);
-        return mappedRubric;
-      }
-
-      // Fallback: if no projectId in response, try to map the response directly
+      // Map the response directly — n8n already returned the rubric items
+      const mappedRubric: RubricCriterion[] = rubricArray.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        name: row.criterion as string,
+        description: (row.description as string) || '',
+        maxScore: (row.max_score as number) || 10,
+        weight: Number(row.weight) || 1,
+      }));
+      setLocalRubric(mappedRubric);
       setShowRubric(true);
-      return localRubric;
+      return mappedRubric;
     } catch (error) {
       console.error('Failed to generate rubric:', error);
       throw error;
