@@ -7,7 +7,15 @@ async function extractTextFromPdf(buffer: ArrayBuffer): Promise<string> {
   // Dynamic import to avoid SSR issues
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
-  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+  // Disable worker — runs PDF parsing in the main thread (fine for serverless)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
+  const doc = await pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  }).promise;
   const textParts: string[] = [];
 
   for (let i = 1; i <= doc.numPages; i++) {
