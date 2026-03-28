@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowRight, Sparkles, Upload, BarChart3, FolderOpen, Calendar } from 'lucide-react';
+import { Plus, ArrowRight, FileText, Upload, Users, FolderOpen } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
@@ -106,149 +106,170 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-2rem)] px-4 py-4 sm:px-8 sm:py-5">
+    <div
+      className="grid px-4 py-4 sm:px-10 sm:py-8"
+      style={{
+        gridTemplateRows: 'auto auto 1fr auto',
+        minHeight: 'calc(100vh - 2rem)',
+        gap: 0,
+      }}
+    >
 
-      {/* Row 1: Hero + CTA */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-7">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
+          <h1
+            className="font-display text-2xl sm:text-[1.75rem] font-extrabold text-foreground leading-tight"
+            style={{ letterSpacing: '-0.03em' }}
+          >
             Find your{' '}
-            <span className="underline decoration-electric-blue decoration-[3px] underline-offset-4">
+            <span className="underline decoration-electric-blue decoration-[3px] underline-offset-[5px]">
               top candidates in minutes
             </span>
             , not days.
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             AI screens every resume against your custom rubric — you decide who makes the cut.
           </p>
         </div>
-        <Button asChild size="lg" className="bg-electric-blue hover:bg-deep-blue text-base px-6 gap-2 shrink-0 w-full sm:w-auto">
+        <Button
+          asChild
+          className="bg-electric-blue hover:bg-deep-blue text-sm font-semibold px-5 py-2.5 gap-1.5 shrink-0 w-full sm:w-auto shadow-[0_2px_12px_rgba(27,111,238,0.18)] hover:shadow-[0_4px_20px_rgba(27,111,238,0.35)] hover:-translate-y-px transition-all rounded-[9px]"
+        >
           <Link href="/dashboard/project/create">
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
             New Project
-            <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
       </div>
 
-      {/* Row 2: How It Works — 3 cards, fill remaining space */}
-      <div className="flex-1 flex flex-col mb-4">
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+      {/* ── How It Works ── */}
+      <div className="mb-6 sm:mb-7">
+        <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground mb-3" style={{ letterSpacing: '0.12em' }}>
           How It Works
         </h2>
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3 flex-1">
-          <Link href="/dashboard/project/create" className="group flex">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
-                  <Sparkles className="h-5 w-5 text-electric-blue" />
+        <div className="grid gap-3.5 grid-cols-1 md:grid-cols-3">
+          {/* Card 1 — Define Criteria (blue) */}
+          <Link href="/dashboard/project/create" className="group">
+            <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 transition-all duration-300 group-hover:-translate-y-[3px] group-hover:shadow-[0_8px_28px_rgba(0,0,0,0.07)] group-hover:border-electric-blue cursor-pointer overflow-hidden">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-electric-blue/10">
+                  <FileText className="h-[18px] w-[18px] text-electric-blue" />
                 </div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Define Criteria</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">1</span>
+                <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Define Criteria</h3>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">1</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Paste the JD.<br />AI builds the rubric. Edit or Approve.
               </p>
-              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Get started <ArrowRight className="h-3 w-3" />
+              <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                Get started <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
               </div>
             </div>
           </Link>
-          <Link href="/dashboard/project/upload" className="group flex">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
-                  <Upload className="h-5 w-5 text-electric-blue" />
+
+          {/* Card 2 — Upload Resumes (green) */}
+          <Link href="/dashboard/project/upload" className="group">
+            <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 transition-all duration-300 group-hover:-translate-y-[3px] group-hover:shadow-[0_8px_28px_rgba(0,0,0,0.07)] group-hover:border-electric-blue cursor-pointer overflow-hidden">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-success/10">
+                  <Upload className="h-[18px] w-[18px] text-success" />
                 </div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Upload Resumes</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">2</span>
+                <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Upload Resumes</h3>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">2</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Upload a ZIP file.<br />AI scores each resume.
               </p>
-              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Upload files <ArrowRight className="h-3 w-3" />
+              <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                Upload files <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
               </div>
             </div>
           </Link>
-          <Link href="/dashboard/project/results" className="group flex">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
-                  <BarChart3 className="h-5 w-5 text-electric-blue" />
+
+          {/* Card 3 — Review & Shortlist (amber) */}
+          <Link href="/dashboard/project/results" className="group">
+            <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 transition-all duration-300 group-hover:-translate-y-[3px] group-hover:shadow-[0_8px_28px_rgba(0,0,0,0.07)] group-hover:border-electric-blue cursor-pointer overflow-hidden">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-warning/10">
+                  <Users className="h-[18px] w-[18px] text-warning" />
                 </div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Review & Shortlist</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">3</span>
+                <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Review & Shortlist</h3>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">3</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
               </p>
-              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                View results <ArrowRight className="h-3 w-3" />
+              <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                View results <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
               </div>
             </div>
           </Link>
         </div>
       </div>
 
-      {/* Row 3: Quick Stats + Past Projects */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-auto pt-4 border-t border-border/50">
+      {/* ── Spacer — pushes bottom section down ── */}
+      <div />
+
+      {/* ── Bottom: Quick Stats + Past Projects ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 self-end pt-5 border-t border-border">
         {/* Quick Stats */}
-        <div>
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+        <div className="flex flex-col gap-2">
+          <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
             Quick Stats
           </h2>
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="flex items-center gap-1.5">
-              <span className="font-display text-lg font-bold text-foreground">{stats.projects}</span>
-              <span className="text-xs text-muted-foreground">projects</span>
+          <div className="flex items-baseline gap-5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl font-bold text-foreground">{stats.projects}</span>
+              <span className="text-[0.78rem] text-muted-foreground">projects</span>
             </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-display text-lg font-bold text-foreground">{stats.candidates}</span>
-              <span className="text-xs text-muted-foreground">screened</span>
+            <div className="w-px h-[18px] bg-border self-center" />
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl font-bold text-foreground">{stats.candidates}</span>
+              <span className="text-[0.78rem] text-muted-foreground">screened</span>
             </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-display text-lg font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
-              <span className="text-xs text-muted-foreground">avg top score</span>
+            <div className="w-px h-[18px] bg-border self-center" />
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
+              <span className="text-[0.78rem] text-muted-foreground">avg top score</span>
             </div>
           </div>
         </div>
 
         {/* Past Projects */}
-        <div>
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-            Past Projects
-          </h2>
-          <div className="flex items-center gap-3 overflow-x-auto">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
+              Past Projects
+            </h2>
+            <Link href="/dashboard/projects" className="text-[0.78rem] font-semibold text-electric-blue hover:opacity-70 transition-opacity">
+              All →
+            </Link>
+          </div>
+          <div className="flex items-center gap-2.5 overflow-x-auto">
             {recentProjects.length > 0 ? (
-              <div className="flex items-center gap-3 sm:gap-4">
-                {recentProjects.slice(0, 2).map((project) => {
-                  const status = statusConfig[project.status] || statusConfig.draft;
-                  return (
-                    <div
-                      key={project.id}
-                      className={`flex items-center gap-2 text-sm shrink-0 ${
-                        project.status === 'complete' ? 'cursor-pointer hover:opacity-70' : ''
-                      }`}
-                      onClick={() => handleViewProject(project)}
-                    >
-                      <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="font-medium truncate max-w-[100px] sm:max-w-[140px]">{project.project_name}</span>
-                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${status.className}`}>
-                        {status.label}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
+              recentProjects.slice(0, 2).map((project) => {
+                const status = statusConfig[project.status] || statusConfig.draft;
+                return (
+                  <div
+                    key={project.id}
+                    className={`flex items-center gap-2 px-3.5 py-2 bg-card border border-border rounded-[9px] transition-all shrink-0 ${
+                      project.status === 'complete'
+                        ? 'cursor-pointer hover:border-electric-blue hover:shadow-[0_2px_10px_rgba(27,111,238,0.08)]'
+                        : ''
+                    }`}
+                    onClick={() => handleViewProject(project)}
+                  >
+                    <span className="text-[0.82rem] font-medium text-foreground">{project.project_name}</span>
+                    <Badge variant="outline" className={`text-[0.68rem] font-semibold px-2 py-0.5 rounded-[5px] border-0 ${status.className}`}>
+                      {status.label}
+                    </Badge>
+                  </div>
+                );
+              })
             ) : (
               <span className="text-xs text-muted-foreground">No projects yet</span>
             )}
-            <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2 shrink-0">
-              <Link href="/dashboard/projects">All →</Link>
-            </Button>
           </div>
         </div>
       </div>
