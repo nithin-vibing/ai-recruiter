@@ -1,12 +1,115 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
-import { Plus, FolderOpen } from 'lucide-react';
+import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { fetchProjects, fetchCandidates } from '@/lib/api-client';
+import { supabase } from '@/lib/supabase';
+import { useProject } from '@/lib/project-context';
+
+interface ProjectWithCounts {
+  id: string;
+  project_name: string;
+  role_name: string;
+  status: string;
+  created_at: string;
+  candidateCount: number;
+  topScore: number;
+  shortlistedCount: number;
+}
+
+const statusConfig: Record<string, { label: string; className: string }> = {
+  draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
+  rubric_review: { label: 'Rubric Review', className: 'bg-warning/10 text-warning border-warning/20' },
+  screening: { label: 'Screening', className: 'bg-electric-blue/10 text-electric-blue border-electric-blue/20' },
+  complete: { label: 'Complete', className: 'bg-success/10 text-success border-success/20' },
+};
 
 export default function ProjectsPage() {
-  // In a real app, this would fetch from Supabase
-  const projects: unknown[] = [];
+  const router = useRouter();
+  const { setCandidates, setProjectDetails, setCurrentStep } = useProject();
+  const [projects, setProjects] = useState<ProjectWithCounts[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const rawProjects = await fetchProjects();
+
+        // Fetch candidate counts for each project
+        const projectsWithCounts = await Promise.all(
+          rawProjects.map(async (p: Record<string, unknown>) => {
+            const { count } = await supabase
+              .from('candidates')
+              .select('*', { count: 'exact', head: true })
+              .eq('project_id', p.id);
+
+            // Get top score and shortlisted count
+            const { data: candidates } = await supabase
+              .from('candidates')
+              .select('score, status')
+              .eq('project_id', p.id)
+              .order('score', { ascending: false })
+              .limit(1);
+
+            const { count: shortlisted } = await supabase
+              .from('candidates')
+              .select('*', { count: 'exact', head: true })
+              .eq('project_id', p.id)
+              .eq('status', 'shortlisted');
+
+            return {
+              id: p.id as string,
+              project_name: p.project_name as string,
+              role_name: p.role_name as string,
+              status: p.status as string,
+              created_at: p.created_at as string,
+              candidateCount: count || 0,
+              topScore: candidates?.[0]?.score || 0,
+              shortlistedCount: shortlisted || 0,
+            };
+          })
+        );
+
+        setProjects(projectsWithCounts);
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProjects();
+  }, []);
+
+  const handleViewResults = async (project: ProjectWithCounts) => {
+    // Store projectId and load candidates into context
+    sessionStorage.setItem('currentProjectId', project.id);
+    setProjectDetails({
+      name: project.project_name,
+      roleName: project.role_name,
+      jobDescription: '',
+    });
+
+    const candidates = await fetchCandidates(project.id);
+    setCandidates(candidates);
+    setCurrentStep(3);
+    router.push('/dashboard/project/results');
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
 
   return (
     <div className="p-8">
@@ -28,8 +131,15 @@ export default function ProjectsPage() {
         </Button>
       </div>
 
-      {/* Content */}
-      {projects.length === 0 ? (
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && projects.length === 0 && (
         <Card>
           <CardContent className="py-16">
             <Empty>
@@ -47,9 +157,67 @@ export default function ProjectsPage() {
             </Empty>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Project Cards */}
+      {!loading && projects.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Project cards would go here */}
+          {projects.map((project) => {
+            const status = statusConfig[project.status] || statusConfig.draft;
+            return (
+              <Card
+                key={project.id}
+                className="group cursor-pointer transition-all hover:border-electric-blue/30 hover:shadow-md"
+                onClick={() => {
+                  if (project.status === 'complete') {
+                    handleViewResults(project);
+                  }
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <Badge variant="outline" className={status.className}>
+                      {status.label}
+                    </Badge>
+                    {project.status === 'complete' && (
+                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </div>
+
+                  <h3 className="font-display text-lg font-bold text-foreground mb-1 line-clamp-1">
+                    {project.project_name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {project.role_name}
+                  </p>
+
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(project.created_at)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
+                      {project.candidateCount} candidates
+                    </div>
+                  </div>
+
+                  {project.status === 'complete' && project.candidateCount > 0 && (
+                    <div className="mt-4 pt-4 border-t flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Top score: <span className="font-semibold text-success">{project.topScore}</span>
+                      </span>
+                      {project.shortlistedCount > 0 && (
+                        <span className="text-success">
+                          {project.shortlistedCount} shortlisted
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

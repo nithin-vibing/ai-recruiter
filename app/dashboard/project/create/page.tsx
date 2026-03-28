@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
@@ -16,6 +16,7 @@ export default function CreateProjectPage() {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>([]);
   const [showRubric, setShowRubric] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const rubricRef = useRef<HTMLDivElement>(null);
 
   const handleGenerateRubric = async (data: { name: string; roleName: string; jobDescription: string }) => {
     setIsGenerating(true);
@@ -42,6 +43,10 @@ export default function CreateProjectPage() {
       }));
       setLocalRubric(mappedRubric);
       setShowRubric(true);
+      // Auto-scroll to rubric after a brief delay for render
+      setTimeout(() => {
+        rubricRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
       return mappedRubric;
     } catch (error) {
       console.error('Failed to generate rubric:', error);
@@ -99,11 +104,13 @@ export default function CreateProjectPage() {
         />
 
         {showRubric && localRubric.length > 0 && (
+          <div ref={rubricRef}>
           <RubricTable
             rubric={localRubric}
             onRubricChange={handleRubricChange}
             onApprove={handleApproveRubric}
           />
+          </div>
         )}
       </div>
     </div>

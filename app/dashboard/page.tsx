@@ -1,9 +1,38 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, FolderOpen, Users, ArrowRight, Sparkles, Upload, BarChart3 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState({ projects: 0, candidates: 0 });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const { count: projectCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: candidateCount } = await supabase
+          .from('candidates')
+          .select('*', { count: 'exact', head: true });
+
+        setStats({
+          projects: projectCount || 0,
+          candidates: candidateCount || 0,
+        });
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    }
+
+    loadStats();
+  }, []);
+
   return (
     <div className="p-8 max-w-5xl">
       {/* Hero */}
@@ -64,7 +93,7 @@ export default function DashboardPage() {
               <BarChart3 className="h-5 w-5 text-electric-blue" />
             </div>
             <div className="absolute top-6 right-6 font-display text-4xl font-extrabold text-muted-foreground/10">3</div>
-            <h3 className="font-display font-bold text-foreground mb-1">Review &amp; shortlist</h3>
+            <h3 className="font-display font-bold text-foreground mb-1">Review & shortlist</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               See ranked results. Shortlist, hold, or reject. Add notes. Export your top candidates to CSV.
             </p>
@@ -100,11 +129,11 @@ export default function DashboardPage() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Projects created</span>
-                <span className="font-medium font-display">—</span>
+                <span className="font-medium font-display">{stats.projects}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Candidates screened</span>
-                <span className="font-medium font-display">—</span>
+                <span className="font-medium font-display">{stats.candidates}</span>
               </div>
             </div>
           </CardContent>

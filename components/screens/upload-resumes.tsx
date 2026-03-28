@@ -205,12 +205,14 @@ export function UploadResumes({
               <div className="flex items-center justify-between">
                 <p className="font-display font-semibold text-foreground">Screening in progress</p>
                 <span className="text-sm font-medium text-electric-blue">
-                  {screeningProgress.current}/{screeningProgress.total}
+                  {screeningProgress.current} scored
                 </span>
               </div>
-              <Progress value={progressPercent} className="h-2" />
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-electric-blue rounded-full animate-pulse" style={{ width: '100%', opacity: 0.6 }} />
+              </div>
               <p className="text-sm text-muted-foreground">
-                Scoring resume {screeningProgress.current} of {screeningProgress.total}... Each resume is evaluated against your rubric by Claude AI.
+                {screeningProgress.current} candidates scored so far... Each resume is evaluated against your rubric by Claude AI.
               </p>
             </div>
           </CardContent>
