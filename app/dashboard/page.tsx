@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FolderOpen, Users, ArrowRight, Sparkles, Upload, BarChart3, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, ArrowRight, Sparkles, Upload, BarChart3, FolderOpen, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
@@ -35,7 +34,6 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        // Fetch stats
         const { count: projectCount } = await supabase
           .from('projects')
           .select('*', { count: 'exact', head: true });
@@ -44,7 +42,6 @@ export default function DashboardPage() {
           .from('candidates')
           .select('*', { count: 'exact', head: true });
 
-        // Fetch avg top score across completed projects
         const { data: completedProjects } = await supabase
           .from('projects')
           .select('id')
@@ -74,12 +71,11 @@ export default function DashboardPage() {
           avgTopScore,
         });
 
-        // Fetch recent projects (last 3)
         const { data: recent } = await supabase
           .from('projects')
           .select('id, project_name, role_name, status, created_at')
           .order('created_at', { ascending: false })
-          .limit(1);
+          .limit(3);
 
         setRecentProjects(recent || []);
       } catch (error) {
@@ -110,158 +106,144 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="px-8 py-6">
-      {/* Hero — compact */}
-      <div className="mb-5">
-        <h1 className="font-display text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
-          Find your{' '}
-          <span className="underline decoration-electric-blue decoration-[3px] underline-offset-4">
-            top candidates in minutes
-          </span>
-          , not days.
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground max-w-xl">
-          AI screens every resume against your custom rubric — you decide who makes the cut.
-        </p>
+    <div className="flex flex-col h-[calc(100vh-2rem)] px-8 py-5">
+
+      {/* Row 1: Hero + CTA — single row */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
+            Find your{' '}
+            <span className="underline decoration-electric-blue decoration-[3px] underline-offset-4">
+              top candidates in minutes
+            </span>
+            , not days.
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            AI screens every resume against your custom rubric — you decide who makes the cut.
+          </p>
+        </div>
+        <Button asChild size="lg" className="bg-electric-blue hover:bg-deep-blue text-base px-6 gap-2 shrink-0">
+          <Link href="/dashboard/project/create">
+            <Plus className="h-5 w-5" />
+            New Project
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </div>
 
-      {/* CTA */}
-      <Card className="mb-5 border-2 border-electric-blue/20 bg-gradient-to-br from-cloud-blue/40 to-white">
-        <CardContent className="flex items-center justify-between p-5">
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-0.5">Start a new screening</h2>
-            <p className="text-sm text-muted-foreground">Paste a JD, upload resumes, get ranked candidates.</p>
-          </div>
-          <Button asChild size="lg" className="bg-electric-blue hover:bg-deep-blue text-base px-6 gap-2">
-            <Link href="/dashboard/project/create">
-              <Plus className="h-5 w-5" />
-              New Project
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* How it works — compact + clickable */}
-      <div className="mb-4">
+      {/* Row 2: How It Works — 3 cards, takes most space */}
+      <div className="flex-1 mb-4">
         <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-          How it works
+          How It Works
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3 h-[calc(100%-2rem)]">
           <Link href="/dashboard/project/create" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
-                  <Sparkles className="h-4 w-4 text-electric-blue" />
+            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+                  <Sparkles className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Define Criteria</h3>
-                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">1</span>
+                <h3 className="font-display text-lg font-bold text-foreground">Define Criteria</h3>
+                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">1</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
                 Paste a JD. AI builds a weighted rubric. Edit or approve.
               </p>
+              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                Get started <ArrowRight className="h-3 w-3" />
+              </div>
             </div>
           </Link>
           <Link href="/dashboard/project/upload" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
-                  <Upload className="h-4 w-4 text-electric-blue" />
+            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+                  <Upload className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Upload Resumes</h3>
-                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">2</span>
+                <h3 className="font-display text-lg font-bold text-foreground">Upload Resumes</h3>
+                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">2</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
                 Drop a ZIP of PDFs. Each one scored by Claude AI.
               </p>
+              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                Upload files <ArrowRight className="h-3 w-3" />
+              </div>
             </div>
           </Link>
           <Link href="/dashboard/project/results" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
-                  <BarChart3 className="h-4 w-4 text-electric-blue" />
+            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+                  <BarChart3 className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Review & Shortlist</h3>
-                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">3</span>
+                <h3 className="font-display text-lg font-bold text-foreground">Review & Shortlist</h3>
+                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">3</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
                 Ranked results with scores and reasoning. Shortlist, hold, or reject.
               </p>
+              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                View results <ArrowRight className="h-3 w-3" />
+              </div>
             </div>
           </Link>
         </div>
       </div>
 
-      {/* Bottom row: Recent Projects + Stats */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Recent Projects */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground">
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                Recent Projects
-              </h3>
-              <Button variant="ghost" asChild size="sm" className="text-xs h-7 px-2">
-                <Link href="/dashboard/projects">View All</Link>
-              </Button>
-            </div>
-            {recentProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No projects yet. Create your first one above.</p>
-            ) : (
-              <div className="space-y-1">
-                {recentProjects.map((project) => {
-                  const status = statusConfig[project.status] || statusConfig.draft;
-                  return (
-                    <div
-                      key={project.id}
-                      className={`flex items-center justify-between py-1.5 px-3 rounded-lg text-sm ${
-                        project.status === 'complete' ? 'cursor-pointer hover:bg-muted/50 transition-colors' : ''
-                      }`}
-                      onClick={() => handleViewProject(project)}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{project.project_name}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(project.created_at)}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className={`ml-3 text-xs ${status.className}`}>
-                        {status.label}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Row 3: Stats bar + Recent projects — compact footer */}
+      <div className="flex items-center gap-6 py-3 border-t border-border/50">
+        {/* Stats */}
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-1.5">
+            <span className="font-display text-lg font-bold text-foreground">{stats.projects}</span>
+            <span className="text-xs text-muted-foreground">projects</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <span className="font-display text-lg font-bold text-foreground">{stats.candidates}</span>
+            <span className="text-xs text-muted-foreground">screened</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <span className="font-display text-lg font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
+            <span className="text-xs text-muted-foreground">avg top score</span>
+          </div>
+        </div>
 
-        {/* Quick Stats */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground mb-3">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              Quick Stats
-            </h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="font-display text-2xl font-bold text-foreground">{stats.projects}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Projects</p>
-              </div>
-              <div>
-                <p className="font-display text-2xl font-bold text-foreground">{stats.candidates}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Screened</p>
-              </div>
-              <div>
-                <p className="font-display text-2xl font-bold text-electric-blue">{stats.avgTopScore || '—'}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Avg Top Score</p>
-              </div>
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Recent Projects */}
+        <div className="flex items-center gap-3">
+          <FolderOpen className="h-4 w-4 text-muted-foreground" />
+          {recentProjects.length > 0 ? (
+            <div className="flex items-center gap-4">
+              {recentProjects.slice(0, 2).map((project) => {
+                const status = statusConfig[project.status] || statusConfig.draft;
+                return (
+                  <div
+                    key={project.id}
+                    className={`flex items-center gap-2 text-sm ${
+                      project.status === 'complete' ? 'cursor-pointer hover:opacity-70' : ''
+                    }`}
+                    onClick={() => handleViewProject(project)}
+                  >
+                    <span className="font-medium truncate max-w-[120px]">{project.project_name}</span>
+                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${status.className}`}>
+                      {status.label}
+                    </Badge>
+                  </div>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <span className="text-xs text-muted-foreground">No projects yet</span>
+          )}
+          <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2">
+            <Link href="/dashboard/projects">All →</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
