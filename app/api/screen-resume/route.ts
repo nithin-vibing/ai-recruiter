@@ -1,72 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { resumeContent, rubric } = body;
+    const formData = await request.formData();
+    const projectId = formData.get('projectId') as string;
+    const zipFile = formData.get('resumesZip') as File;
 
-    if (!resumeContent || !rubric) {
+    if (!projectId || !zipFile) {
       return NextResponse.json(
-        { error: 'Missing required fields: resumeContent and rubric' },
+        { error: 'Missing required fields: projectId and resumesZip' },
         { status: 400 }
       );
     }
 
-    // Check if n8n webhook URL is configured
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-    
-    if (n8nWebhookUrl) {
-      // Forward to n8n webhook
-      const response = await fetch(`${n8nWebhookUrl}/screen-resume`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ resumeContent, rubric }),
-      });
+    // Forward FormData to n8n Workflow 2 (Resume Screener)
+    const n8nFormData = new FormData();
+    n8nFormData.append('projectId', projectId);
+    n8nFormData.append('resumesZip', zipFile);
 
-      if (!response.ok) {
-        throw new Error(`n8n webhook failed: ${response.statusText}`);
-      }
+    const response = await fetch(`${N8N_WEBHOOK_BASE}/resume-screener`, {
+      method: 'POST',
+      body: n8nFormData,
+      // No Content-Type header — let fetch set the multipart boundary
+    });
 
-      const data = await response.json();
-      return NextResponse.json(data);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('n8n webhook error:', errorText);
+      throw new Error(`n8n webhook failed: ${response.status} ${response.statusText}`);
     }
 
-    // Fallback: Generate mock candidate data
-    const names = [
-      'Alex Johnson', 'Sarah Chen', 'Michael Park', 'Emily Davis', 
-      'James Wilson', 'Maria Garcia', 'David Kim', 'Lisa Thompson'
-    ];
-    
-    const randomName = names[Math.floor(Math.random() * names.length)];
-    const totalScore = Math.floor(Math.random() * 40) + 60; // 60-100
-
-    const scores = rubric.map((criterion: { id: string; name: string; maxScore: number }) => ({
-      criterionId: criterion.id,
-      criterionName: criterion.name,
-      score: Math.floor(Math.random() * 4) + (criterion.maxScore - 4),
-      maxScore: criterion.maxScore,
-    }));
-
-    const mockCandidate = {
-      name: randomName,
-      email: `${randomName.toLowerCase().replace(' ', '.')}@email.com`,
-      phone: `+1 (555) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
-      linkedIn: `https://linkedin.com/in/${randomName.toLowerCase().replace(' ', '-')}`,
-      totalScore,
-      scores,
-      reasoning: `Strong candidate with ${totalScore > 80 ? 'excellent' : totalScore > 70 ? 'good' : 'adequate'} qualifications. Shows proficiency in required skills and relevant experience in the field. Communication skills are ${totalScore > 75 ? 'above average' : 'satisfactory'}.`,
-    };
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    return NextResponse.json({ candidate: mockCandidate });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error screening resume:', error);
+    console.error('Error screening resumes:', error);
     return NextResponse.json(
-      { error: 'Failed to screen resume' },
+      { error: 'Failed to screen resumes' },
       { status: 500 }
     );
   }

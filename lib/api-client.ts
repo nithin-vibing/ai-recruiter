@@ -3,8 +3,6 @@
 import { supabase } from './supabase';
 import type { Candidate, CandidateStatus } from './types';
 
-const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
-
 // ─── Screen 1: Generate Rubric ───────────────────────────────────────────────
 
 interface GenerateRubricPayload {
@@ -14,12 +12,11 @@ interface GenerateRubricPayload {
 }
 
 /**
- * Calls n8n Workflow 1 (Rubric Generator).
- * n8n creates the project in Supabase, generates rubric via OpenAI,
- * saves rubric to Supabase, and returns the project + rubric data.
+ * Calls our Next.js API route, which proxies to n8n Workflow 1.
+ * This avoids CORS issues (browser → same domain → n8n).
  */
 export async function generateRubric(data: GenerateRubricPayload) {
-  const response = await fetch(`${N8N_WEBHOOK_BASE}/rubric-generator`, {
+  const response = await fetch('/api/generate-rubric', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -39,19 +36,17 @@ export async function generateRubric(data: GenerateRubricPayload) {
 // ─── Screen 2: Start Screening ───────────────────────────────────────────────
 
 /**
- * Calls n8n Workflow 2 (Resume Screener).
+ * Calls our Next.js API route, which proxies to n8n Workflow 2.
  * Sends the ZIP file + projectId via FormData.
- * n8n decompresses, scores each resume with Claude, writes to Supabase.
  */
 export async function startScreening(projectId: string, zipFile: File) {
   const formData = new FormData();
   formData.append('projectId', projectId);
   formData.append('resumesZip', zipFile);
 
-  const response = await fetch(`${N8N_WEBHOOK_BASE}/resume-screener`, {
+  const response = await fetch('/api/screen-resume', {
     method: 'POST',
     body: formData,
-    // No Content-Type header — browser sets it with boundary for FormData
   });
 
   if (!response.ok) {
