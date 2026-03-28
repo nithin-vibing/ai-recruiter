@@ -149,12 +149,12 @@ export default function DashboardPage() {
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
           <Link href="/dashboard/project/create" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Sparkles className="h-4 w-4 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Define criteria</h3>
+                <h3 className="font-display font-bold text-foreground">Define Criteria</h3>
                 <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">1</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -163,12 +163,12 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/upload" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Upload className="h-4 w-4 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Upload resumes</h3>
+                <h3 className="font-display font-bold text-foreground">Upload Resumes</h3>
                 <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">2</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -177,12 +177,12 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/results" className="group">
-            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full min-h-[140px]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <BarChart3 className="h-4 w-4 text-electric-blue" />
                 </div>
-                <h3 className="font-display font-bold text-foreground">Review & shortlist</h3>
+                <h3 className="font-display font-bold text-foreground">Review & Shortlist</h3>
                 <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">3</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -193,47 +193,75 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom row: Recent Project + Stats — ultra compact */}
-      <div className="flex items-center gap-3 rounded-xl border bg-card px-5 py-3">
-        {/* Recent Project */}
-        <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-        {recentProjects.length > 0 ? (
-          <div
-            className={`flex items-center gap-2 min-w-0 ${
-              recentProjects[0].status === 'complete' ? 'cursor-pointer hover:opacity-80' : ''
-            }`}
-            onClick={() => recentProjects[0] && handleViewProject(recentProjects[0])}
-          >
-            <span className="text-sm font-medium truncate">{recentProjects[0].project_name}</span>
-            <Badge variant="outline" className={`text-xs shrink-0 ${(statusConfig[recentProjects[0].status] || statusConfig.draft).className}`}>
-              {(statusConfig[recentProjects[0].status] || statusConfig.draft).label}
-            </Badge>
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">No projects yet</span>
-        )}
-        <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2 ml-auto shrink-0">
-          <Link href="/dashboard/projects">View All</Link>
-        </Button>
+      {/* Bottom row: Recent Projects + Stats */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Recent Projects */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground">
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                Recent Projects
+              </h3>
+              <Button variant="ghost" asChild size="sm" className="text-xs h-7 px-2">
+                <Link href="/dashboard/projects">View All</Link>
+              </Button>
+            </div>
+            {recentProjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No projects yet. Create your first one above.</p>
+            ) : (
+              <div className="space-y-1">
+                {recentProjects.map((project) => {
+                  const status = statusConfig[project.status] || statusConfig.draft;
+                  return (
+                    <div
+                      key={project.id}
+                      className={`flex items-center justify-between py-1.5 px-3 rounded-lg text-sm ${
+                        project.status === 'complete' ? 'cursor-pointer hover:bg-muted/50 transition-colors' : ''
+                      }`}
+                      onClick={() => handleViewProject(project)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{project.project_name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(project.created_at)}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className={`ml-3 text-xs ${status.className}`}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Divider */}
-        <div className="h-6 w-px bg-border shrink-0" />
-
-        {/* Quick Stats inline */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="text-center">
-            <span className="font-display text-sm font-bold">{stats.projects}</span>
-            <span className="text-xs text-muted-foreground ml-1">projects</span>
-          </div>
-          <div className="text-center">
-            <span className="font-display text-sm font-bold">{stats.candidates}</span>
-            <span className="text-xs text-muted-foreground ml-1">screened</span>
-          </div>
-          <div className="text-center">
-            <span className="font-display text-sm font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
-            <span className="text-xs text-muted-foreground ml-1">avg top</span>
-          </div>
-        </div>
+        {/* Quick Stats */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground mb-3">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              Quick Stats
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="font-display text-2xl font-bold text-foreground">{stats.projects}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Projects</p>
+              </div>
+              <div>
+                <p className="font-display text-2xl font-bold text-foreground">{stats.candidates}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Screened</p>
+              </div>
+              <div>
+                <p className="font-display text-2xl font-bold text-electric-blue">{stats.avgTopScore || '—'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Avg Top Score</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
