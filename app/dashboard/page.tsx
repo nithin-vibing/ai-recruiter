@@ -131,14 +131,14 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {/* Row 2: How It Works — 3 cards */}
-      <div className="mb-4">
+      {/* Row 2: How It Works — 3 cards, fill remaining space */}
+      <div className="flex-1 flex flex-col mb-4">
         <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
           How It Works
         </h2>
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3">
-          <Link href="/dashboard/project/create" className="group">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3 flex-1">
+          <Link href="/dashboard/project/create" className="group flex">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <Sparkles className="h-5 w-5 text-electric-blue" />
@@ -149,13 +149,13 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Paste the JD.<br />AI builds the rubric. Edit or Approve.
               </p>
-              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Get started <ArrowRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
-          <Link href="/dashboard/project/upload" className="group">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+          <Link href="/dashboard/project/upload" className="group flex">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <Upload className="h-5 w-5 text-electric-blue" />
@@ -166,13 +166,13 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Upload a ZIP file.<br />AI scores each resume.
               </p>
-              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Upload files <ArrowRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
-          <Link href="/dashboard/project/results" className="group">
-            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+          <Link href="/dashboard/project/results" className="group flex">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <BarChart3 className="h-5 w-5 text-electric-blue" />
@@ -183,7 +183,7 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
               </p>
-              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-auto pt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 View results <ArrowRight className="h-3 w-3" />
               </div>
             </div>
