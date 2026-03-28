@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
-// @ts-expect-error - pdf-parse doesn't have type declarations
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  return data.text || '';
+  const parser = new PDFParse({ data: buffer });
+  await parser.load();
+  const result = await parser.getText();
+  return result.text || '';
 }
 
 export async function POST(request: NextRequest) {
