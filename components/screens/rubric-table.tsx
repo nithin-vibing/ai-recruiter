@@ -108,7 +108,7 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove 
       <CardContent>
         <div className="rounded-lg border overflow-x-auto">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-[200px]">Criterion</TableHead>
                 <TableHead>Description</TableHead>
