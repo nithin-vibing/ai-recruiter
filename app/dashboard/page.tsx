@@ -79,7 +79,7 @@ export default function DashboardPage() {
           .from('projects')
           .select('id, project_name, role_name, status, created_at')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(2);
 
         setRecentProjects(recent || []);
       } catch (error) {
@@ -112,18 +112,22 @@ export default function DashboardPage() {
   return (
     <div className="p-6 max-w-5xl">
       {/* Hero — compact */}
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="font-display text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
-          Find your top candidates in minutes, not days.
+          Find your{' '}
+          <span className="underline decoration-electric-blue decoration-[3px] underline-offset-4">
+            top candidates in minutes
+          </span>
+          , not days.
         </h1>
-        <p className="mt-1.5 text-base text-muted-foreground max-w-xl">
+        <p className="mt-1 text-sm text-muted-foreground max-w-xl">
           AI screens every resume against your custom rubric — you decide who makes the cut.
         </p>
       </div>
 
       {/* CTA */}
-      <Card className="mb-6 border-2 border-electric-blue/20 bg-gradient-to-br from-cloud-blue/40 to-white">
-        <CardContent className="flex items-center justify-between p-6">
+      <Card className="mb-5 border-2 border-electric-blue/20 bg-gradient-to-br from-cloud-blue/40 to-white">
+        <CardContent className="flex items-center justify-between p-5">
           <div>
             <h2 className="font-display text-xl font-bold text-foreground mb-0.5">Start a new screening</h2>
             <p className="text-sm text-muted-foreground">Paste a JD, upload resumes, get ranked candidates.</p>
@@ -139,13 +143,13 @@ export default function DashboardPage() {
       </Card>
 
       {/* How it works — compact + clickable */}
-      <div className="mb-6">
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+      <div className="mb-4">
+        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
           How it works
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           <Link href="/dashboard/project/create" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-4 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Sparkles className="h-4 w-4 text-electric-blue" />
@@ -159,7 +163,7 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/upload" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-4 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Upload className="h-4 w-4 text-electric-blue" />
@@ -173,7 +177,7 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/results" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+            <div className="relative rounded-xl border bg-card p-4 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
                   <BarChart3 className="h-4 w-4 text-electric-blue" />
@@ -190,11 +194,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom row: Recent Projects + Stats */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {/* Recent Projects */}
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground">
                 <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 Recent Projects
@@ -206,7 +210,7 @@ export default function DashboardPage() {
             {recentProjects.length === 0 ? (
               <p className="text-sm text-muted-foreground">No projects yet. Create your first one above.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {recentProjects.map((project) => {
                   const status = statusConfig[project.status] || statusConfig.draft;
                   return (
@@ -237,8 +241,8 @@ export default function DashboardPage() {
 
         {/* Quick Stats */}
         <Card>
-          <CardContent className="p-5">
-            <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground mb-4">
+          <CardContent className="p-4">
+            <h3 className="flex items-center gap-2 font-display font-bold text-sm text-foreground mb-3">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               Quick Stats
             </h3>
