@@ -106,12 +106,12 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] px-8 py-5">
+    <div className="flex flex-col min-h-[calc(100vh-2rem)] px-4 py-4 sm:px-8 sm:py-5">
 
-      {/* Row 1: Hero + CTA — single row */}
-      <div className="flex items-center justify-between mb-5">
+      {/* Row 1: Hero + CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
         <div>
-          <h1 className="font-display text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
             Find your{' '}
             <span className="underline decoration-electric-blue decoration-[3px] underline-offset-4">
               top candidates in minutes
@@ -122,7 +122,7 @@ export default function DashboardPage() {
             AI screens every resume against your custom rubric — you decide who makes the cut.
           </p>
         </div>
-        <Button asChild size="lg" className="bg-electric-blue hover:bg-deep-blue text-base px-6 gap-2 shrink-0">
+        <Button asChild size="lg" className="bg-electric-blue hover:bg-deep-blue text-base px-6 gap-2 shrink-0 w-full sm:w-auto">
           <Link href="/dashboard/project/create">
             <Plus className="h-5 w-5" />
             New Project
@@ -131,59 +131,59 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {/* Row 2: How It Works — 3 cards, takes most space */}
-      <div className="flex-1 mb-4">
+      {/* Row 2: How It Works — 3 cards */}
+      <div className="mb-4">
         <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
           How It Works
         </h2>
-        <div className="grid gap-5 md:grid-cols-3 h-[calc(100%-2rem)]">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3">
           <Link href="/dashboard/project/create" className="group">
-            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <Sparkles className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display text-lg font-bold text-foreground">Define Criteria</h3>
-                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">1</span>
+                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Define Criteria</h3>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">1</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Paste the JD.<br />AI builds the rubric. Edit or Approve.
               </p>
-              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Get started <ArrowRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
           <Link href="/dashboard/project/upload" className="group">
-            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <Upload className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display text-lg font-bold text-foreground">Upload Resumes</h3>
-                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">2</span>
+                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Upload Resumes</h3>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">2</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Upload a ZIP file.<br />AI scores each resume.
               </p>
-              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Upload files <ArrowRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
           <Link href="/dashboard/project/results" className="group">
-            <div className="rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md h-full flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric-blue/10">
+            <div className="rounded-xl border bg-card p-4 sm:p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-md flex flex-col">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric-blue/10">
                   <BarChart3 className="h-5 w-5 text-electric-blue" />
                 </div>
-                <h3 className="font-display text-lg font-bold text-foreground">Review & Shortlist</h3>
-                <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">3</span>
+                <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Review & Shortlist</h3>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">3</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
               </p>
-              <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <div className="mt-3 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 View results <ArrowRight className="h-3 w-3" />
               </div>
             </div>
@@ -192,9 +192,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 3: Stats bar + Recent projects — compact footer */}
-      <div className="flex items-center gap-6 py-3 border-t border-border/50">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 py-3 border-t border-border/50 mt-auto">
         {/* Stats */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4 sm:gap-5">
           <div className="flex items-center gap-1.5">
             <span className="font-display text-lg font-bold text-foreground">{stats.projects}</span>
             <span className="text-xs text-muted-foreground">projects</span>
@@ -211,25 +211,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Spacer — desktop only */}
+        <div className="hidden sm:block flex-1" />
 
         {/* Recent Projects */}
-        <div className="flex items-center gap-3">
-          <FolderOpen className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-3 overflow-x-auto">
+          <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
           {recentProjects.length > 0 ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               {recentProjects.slice(0, 2).map((project) => {
                 const status = statusConfig[project.status] || statusConfig.draft;
                 return (
                   <div
                     key={project.id}
-                    className={`flex items-center gap-2 text-sm ${
+                    className={`flex items-center gap-2 text-sm shrink-0 ${
                       project.status === 'complete' ? 'cursor-pointer hover:opacity-70' : ''
                     }`}
                     onClick={() => handleViewProject(project)}
                   >
-                    <span className="font-medium truncate max-w-[120px]">{project.project_name}</span>
+                    <span className="font-medium truncate max-w-[100px] sm:max-w-[120px]">{project.project_name}</span>
                     <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${status.className}`}>
                       {status.label}
                     </Badge>
@@ -240,7 +240,7 @@ export default function DashboardPage() {
           ) : (
             <span className="text-xs text-muted-foreground">No projects yet</span>
           )}
-          <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2">
+          <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2 shrink-0">
             <Link href="/dashboard/projects">All →</Link>
           </Button>
         </div>
