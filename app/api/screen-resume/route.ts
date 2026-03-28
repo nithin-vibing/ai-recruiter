@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse');
 
 const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
 
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  return data.text || '';
+async function extractTextFromPdf(buffer: ArrayBuffer): Promise<string> {
+  // Dynamic import to avoid SSR issues
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+  const textParts: string[] = [];
+
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((item: { str?: string }) => item.str || '')
+      .join(' ');
+    textParts.push(pageText);
+  }
+
+  return textParts.join('\n');
 }
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Screen resume API called');
+
     const formData = await request.formData();
     const projectId = formData.get('projectId') as string;
     const zipFile = formData.get('resumesZip') as File;
@@ -23,8 +37,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`Received ZIP: ${zipFile.name}, size: ${zipFile.size}, projectId: ${projectId}`);
+
     // Read the uploaded ZIP
-    const zipBuffer = Buffer.from(await zipFile.arrayBuffer());
+    const zipBuffer = await zipFile.arrayBuffer();
     const zip = await JSZip.loadAsync(zipBuffer);
 
     // Create a new ZIP with text-only files
@@ -43,17 +59,19 @@ export async function POST(request: NextRequest) {
       if (lowerName.endsWith('.pdf')) {
         // Extract text from PDF
         try {
-          const pdfBuffer = Buffer.from(await zipEntry.async('arraybuffer'));
+          console.log(`Extracting text from PDF: ${baseName}`);
+          const pdfBuffer = await zipEntry.async('arraybuffer');
           const text = await extractTextFromPdf(pdfBuffer);
           if (text && text.trim().length > 50) {
-            // Save as .txt with same base name
             const txtName = baseName.replace(/\.pdf$/i, '.txt');
             textZip.file(txtName, text.trim());
             fileCount++;
+            console.log(`Extracted ${text.trim().length} chars from ${baseName}`);
+          } else {
+            console.warn(`Skipping ${baseName}: extracted text too short (${text?.trim().length || 0} chars)`);
           }
         } catch (e) {
           console.error(`Failed to parse PDF: ${fileName}`, e);
-          // Skip unreadable PDFs
         }
       } else if (lowerName.endsWith('.txt')) {
         // Pass through text files as-is
@@ -63,8 +81,9 @@ export async function POST(request: NextRequest) {
           fileCount++;
         }
       }
-      // Skip other file types (docx, images, etc.)
     }
+
+    console.log(`Processed ${fileCount} resumes total`);
 
     if (fileCount === 0) {
       return NextResponse.json(
@@ -75,8 +94,6 @@ export async function POST(request: NextRequest) {
 
     // Generate the text-only ZIP
     const textZipBuffer = await textZip.generateAsync({ type: 'nodebuffer' });
-
-    // Create a Blob to send as FormData
     const textZipBlob = new Blob([textZipBuffer], { type: 'application/zip' });
 
     // Forward to n8n
@@ -84,7 +101,7 @@ export async function POST(request: NextRequest) {
     n8nFormData.append('projectId', projectId);
     n8nFormData.append('resumesZip', textZipBlob, 'resumes.zip');
 
-    console.log(`Processed ${fileCount} resumes, sending to n8n...`);
+    console.log(`Sending ${fileCount} text resumes to n8n...`);
 
     const response = await fetch(`${N8N_WEBHOOK_BASE}/resume-screener`, {
       method: 'POST',
@@ -98,11 +115,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log('n8n responded successfully');
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error screening resumes:', error);
     return NextResponse.json(
-      { error: 'Failed to screen resumes' },
+      { error: `Failed to screen resumes: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
