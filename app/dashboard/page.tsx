@@ -75,7 +75,7 @@ export default function DashboardPage() {
           .from('projects')
           .select('id, project_name, role_name, status, created_at')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(2);
 
         setRecentProjects(recent || []);
       } catch (error) {
