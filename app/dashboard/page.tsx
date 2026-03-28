@@ -147,7 +147,7 @@ export default function DashboardPage() {
                 <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">1</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                Paste a JD. AI builds a weighted rubric. Edit or approve.
+                Paste the JD.<br />AI builds the rubric. Edit or Approve.
               </p>
               <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Get started <ArrowRight className="h-3 w-3" />
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                 <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">2</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                Drop a ZIP of PDFs. Each one scored by Claude AI.
+                Upload a ZIP file.<br />AI scores each resume.
               </p>
               <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Upload files <ArrowRight className="h-3 w-3" />
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                 <span className="ml-auto font-display text-4xl font-extrabold text-muted-foreground/8">3</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                Ranked results with scores and reasoning. Shortlist, hold, or reject.
+                Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
               </p>
               <div className="mt-4 text-xs text-electric-blue font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 View results <ArrowRight className="h-3 w-3" />
