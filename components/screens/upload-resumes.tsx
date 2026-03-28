@@ -79,7 +79,7 @@ export function UploadResumes({
         <CardHeader>
           <CardTitle className="font-display text-xl">Upload Resumes</CardTitle>
           <CardDescription>
-            Upload a .zip archive containing resume files (.txt format). The AI will score each one against your approved rubric.
+            Upload a .zip archive containing resume files (.pdf or .txt). The AI will score each one against your approved rubric.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -119,7 +119,7 @@ export function UploadResumes({
                 </p>
               </div>
               <p className="text-xs text-muted-foreground/60">
-                .zip archive containing .txt resume files
+                .zip archive containing .pdf or .txt resume files
               </p>
             </div>
           </div>
