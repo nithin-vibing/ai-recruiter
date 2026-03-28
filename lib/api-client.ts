@@ -37,12 +37,26 @@ export async function generateRubric(data: GenerateRubricPayload) {
 
 /**
  * Calls our Next.js API route, which proxies to n8n Workflow 2.
- * Sends the ZIP file + projectId via FormData.
+ * First converts PDFs to text in the browser (pdf.js has full DOM support here),
+ * then sends the text-only ZIP to the API route.
  */
-export async function startScreening(projectId: string, zipFile: File) {
+export async function startScreening(
+  projectId: string,
+  zipFile: File,
+  onExtractionProgress?: (current: number, total: number, fileName: string) => void
+) {
+  // Step 1: Convert PDFs to text in the browser
+  const { convertPdfZipToTextZip } = await import('./pdf-extractor');
+  const { textZip, fileCount } = await convertPdfZipToTextZip(zipFile, onExtractionProgress);
+
+  if (fileCount === 0) {
+    throw new Error('No readable resume files found in ZIP. Please upload PDFs or TXT files.');
+  }
+
+  // Step 2: Send text-only ZIP to API route → n8n
   const formData = new FormData();
   formData.append('projectId', projectId);
-  formData.append('resumesZip', zipFile);
+  formData.append('resumesZip', textZip, 'resumes.zip');
 
   const response = await fetch('/api/screen-resume', {
     method: 'POST',
