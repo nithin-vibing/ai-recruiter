@@ -110,7 +110,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="px-8 py-6">
       {/* Hero — compact */}
       <div className="mb-5">
         <h1 className="font-display text-3xl font-extrabold text-foreground" style={{ letterSpacing: '-0.03em' }}>
@@ -147,15 +147,15 @@ export default function DashboardPage() {
         <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
           How it works
         </h2>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           <Link href="/dashboard/project/create" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Sparkles className="h-4 w-4 text-electric-blue" />
                 </div>
                 <h3 className="font-display font-bold text-foreground">Define criteria</h3>
-                <span className="ml-auto font-display text-2xl font-extrabold text-muted-foreground/10">1</span>
+                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">1</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Paste a JD. AI builds a weighted rubric. Edit or approve.
@@ -163,13 +163,13 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/upload" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <Upload className="h-4 w-4 text-electric-blue" />
                 </div>
                 <h3 className="font-display font-bold text-foreground">Upload resumes</h3>
-                <span className="ml-auto font-display text-2xl font-extrabold text-muted-foreground/10">2</span>
+                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">2</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Drop a ZIP of PDFs. Each one scored by Claude AI.
@@ -177,13 +177,13 @@ export default function DashboardPage() {
             </div>
           </Link>
           <Link href="/dashboard/project/results" className="group">
-            <div className="relative rounded-xl border bg-card p-5 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-electric-blue/10">
+            <div className="relative rounded-xl border bg-card p-6 transition-all group-hover:border-electric-blue/30 group-hover:shadow-sm h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <BarChart3 className="h-4 w-4 text-electric-blue" />
                 </div>
                 <h3 className="font-display font-bold text-foreground">Review & shortlist</h3>
-                <span className="ml-auto font-display text-2xl font-extrabold text-muted-foreground/10">3</span>
+                <span className="ml-auto font-display text-3xl font-extrabold text-muted-foreground/10">3</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning. Shortlist, hold, or reject.
