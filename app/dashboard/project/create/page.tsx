@@ -6,66 +6,8 @@ import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
+import { generateRubric, fetchRubric } from '@/lib/api-client';
 import type { RubricCriterion } from '@/lib/types';
-
-// Mock rubric generation - replace with actual n8n webhook
-async function generateMockRubric(jobDescription: string): Promise<RubricCriterion[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Return mock rubric based on common criteria
-  return [
-    {
-      id: crypto.randomUUID(),
-      name: 'Technical Skills',
-      description: 'Proficiency in required technologies and programming languages',
-      maxScore: 10,
-      weight: 0.25,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Experience',
-      description: 'Relevant work experience and industry knowledge',
-      maxScore: 10,
-      weight: 0.20,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Education',
-      description: 'Educational background and certifications',
-      maxScore: 10,
-      weight: 0.15,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Problem Solving',
-      description: 'Demonstrated ability to solve complex problems',
-      maxScore: 10,
-      weight: 0.15,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Communication',
-      description: 'Written and verbal communication skills',
-      maxScore: 10,
-      weight: 0.10,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Leadership',
-      description: 'Leadership experience and team collaboration',
-      maxScore: 10,
-      weight: 0.10,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Culture Fit',
-      description: 'Alignment with company values and work style',
-      maxScore: 10,
-      weight: 0.05,
-    },
-  ];
-}
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -73,14 +15,42 @@ export default function CreateProjectPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>([]);
   const [showRubric, setShowRubric] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   const handleGenerateRubric = async (data: { name: string; roleName: string; jobDescription: string }) => {
     setIsGenerating(true);
     try {
-      const rubric = await generateMockRubric(data.jobDescription);
-      setLocalRubric(rubric);
+      // Call n8n Workflow 1 — creates project + generates rubric in Supabase
+      const result = await generateRubric(data);
+
+      // Extract projectId from the response
+      // n8n returns the project data — find the project ID
+      const pid = result.projectId || result.id || result[0]?.project_id;
+      if (pid) {
+        setProjectId(pid);
+      }
+
+      // Fetch the rubric from Supabase (n8n already saved it)
+      if (pid) {
+        const rubricData = await fetchRubric(pid);
+        const mappedRubric: RubricCriterion[] = rubricData.map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          name: row.criterion as string,
+          description: (row.description as string) || '',
+          maxScore: (row.max_score as number) || 10,
+          weight: Number(row.weight) || 1,
+        }));
+        setLocalRubric(mappedRubric);
+        setShowRubric(true);
+        return mappedRubric;
+      }
+
+      // Fallback: if no projectId in response, try to map the response directly
       setShowRubric(true);
-      return rubric;
+      return localRubric;
+    } catch (error) {
+      console.error('Failed to generate rubric:', error);
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -96,6 +66,16 @@ export default function CreateProjectPage() {
 
   const handleApproveRubric = () => {
     setRubric(localRubric);
+    // Store projectId in the project context so Screen 2 can use it
+    if (projectId) {
+      setProjectDetails({
+        name: currentProject?.name || '',
+        roleName: currentProject?.roleName || '',
+        jobDescription: currentProject?.jobDescription || '',
+      });
+      // Store projectId in sessionStorage for Screen 2
+      sessionStorage.setItem('currentProjectId', projectId);
+    }
     setCurrentStep(2);
     router.push('/dashboard/project/upload');
   };

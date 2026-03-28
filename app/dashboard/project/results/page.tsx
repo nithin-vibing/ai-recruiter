@@ -5,29 +5,45 @@ import { ResultsTable } from '@/components/screens/results-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { Button } from '@/components/ui/button';
 import { useProject } from '@/lib/project-context';
+import { updateCandidateStatus as updateStatusInDb, updateCandidateComment as updateCommentInDb } from '@/lib/api-client';
 import { Plus } from 'lucide-react';
 import type { CandidateStatus } from '@/lib/types';
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { 
-    currentProject, 
-    candidates, 
-    updateCandidateStatus, 
+  const {
+    currentProject,
+    candidates,
+    updateCandidateStatus,
     updateCandidateComments,
     resetProject,
   } = useProject();
 
-  const handleStatusChange = (candidateId: string, status: CandidateStatus) => {
+  const handleStatusChange = async (candidateId: string, status: CandidateStatus) => {
+    // Update locally (instant UI feedback)
     updateCandidateStatus(candidateId, status);
+    // Persist to Supabase
+    try {
+      await updateStatusInDb(candidateId, status);
+    } catch (error) {
+      console.error('Failed to save status:', error);
+    }
   };
 
-  const handleCommentsChange = (candidateId: string, comments: string) => {
+  const handleCommentsChange = async (candidateId: string, comments: string) => {
+    // Update locally (instant UI feedback)
     updateCandidateComments(candidateId, comments);
+    // Persist to Supabase
+    try {
+      await updateCommentInDb(candidateId, comments);
+    } catch (error) {
+      console.error('Failed to save comment:', error);
+    }
   };
 
   const handleNewProject = () => {
     resetProject();
+    sessionStorage.removeItem('currentProjectId');
     router.push('/dashboard/project/create');
   };
 
@@ -40,7 +56,7 @@ export default function ResultsPage() {
           <p className="mt-2 text-muted-foreground">
             Start a new project to screen candidates
           </p>
-          <Button 
+          <Button
             className="mt-4 bg-electric-blue hover:bg-deep-blue"
             onClick={handleNewProject}
           >
@@ -66,7 +82,7 @@ export default function ResultsPage() {
         </div>
         <div className="flex items-center gap-4">
           <StepIndicator currentStep={3} />
-          <Button 
+          <Button
             variant="outline"
             onClick={handleNewProject}
           >
