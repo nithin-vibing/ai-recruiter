@@ -144,7 +144,7 @@ export default function DashboardPage() {
                   <Sparkles className="h-5 w-5 text-electric-blue" />
                 </div>
                 <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Define Criteria</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">1</span>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">1</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Paste the JD.<br />AI builds the rubric. Edit or Approve.
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                   <Upload className="h-5 w-5 text-electric-blue" />
                 </div>
                 <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Upload Resumes</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">2</span>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">2</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Upload a ZIP file.<br />AI scores each resume.
@@ -178,7 +178,7 @@ export default function DashboardPage() {
                   <BarChart3 className="h-5 w-5 text-electric-blue" />
                 </div>
                 <h3 className="font-display text-base sm:text-lg font-bold text-foreground">Review & Shortlist</h3>
-                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/8">3</span>
+                <span className="ml-auto font-display text-3xl sm:text-4xl font-extrabold text-muted-foreground/20">3</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
@@ -191,58 +191,65 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 3: Stats bar + Recent projects — compact footer */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 py-3 border-t border-border/50 mt-auto">
-        {/* Stats */}
-        <div className="flex items-center gap-4 sm:gap-5">
-          <div className="flex items-center gap-1.5">
-            <span className="font-display text-lg font-bold text-foreground">{stats.projects}</span>
-            <span className="text-xs text-muted-foreground">projects</span>
-          </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-display text-lg font-bold text-foreground">{stats.candidates}</span>
-            <span className="text-xs text-muted-foreground">screened</span>
-          </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-display text-lg font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
-            <span className="text-xs text-muted-foreground">avg top score</span>
+      {/* Row 3: Quick Stats + Past Projects */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-auto pt-4 border-t border-border/50">
+        {/* Quick Stats */}
+        <div>
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            Quick Stats
+          </h2>
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="flex items-center gap-1.5">
+              <span className="font-display text-lg font-bold text-foreground">{stats.projects}</span>
+              <span className="text-xs text-muted-foreground">projects</span>
+            </div>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-display text-lg font-bold text-foreground">{stats.candidates}</span>
+              <span className="text-xs text-muted-foreground">screened</span>
+            </div>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-display text-lg font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
+              <span className="text-xs text-muted-foreground">avg top score</span>
+            </div>
           </div>
         </div>
 
-        {/* Spacer — desktop only */}
-        <div className="hidden sm:block flex-1" />
-
-        {/* Recent Projects */}
-        <div className="flex items-center gap-3 overflow-x-auto">
-          <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-          {recentProjects.length > 0 ? (
-            <div className="flex items-center gap-3 sm:gap-4">
-              {recentProjects.slice(0, 2).map((project) => {
-                const status = statusConfig[project.status] || statusConfig.draft;
-                return (
-                  <div
-                    key={project.id}
-                    className={`flex items-center gap-2 text-sm shrink-0 ${
-                      project.status === 'complete' ? 'cursor-pointer hover:opacity-70' : ''
-                    }`}
-                    onClick={() => handleViewProject(project)}
-                  >
-                    <span className="font-medium truncate max-w-[100px] sm:max-w-[120px]">{project.project_name}</span>
-                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${status.className}`}>
-                      {status.label}
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">No projects yet</span>
-          )}
-          <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2 shrink-0">
-            <Link href="/dashboard/projects">All →</Link>
-          </Button>
+        {/* Past Projects */}
+        <div>
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            Past Projects
+          </h2>
+          <div className="flex items-center gap-3 overflow-x-auto">
+            {recentProjects.length > 0 ? (
+              <div className="flex items-center gap-3 sm:gap-4">
+                {recentProjects.slice(0, 2).map((project) => {
+                  const status = statusConfig[project.status] || statusConfig.draft;
+                  return (
+                    <div
+                      key={project.id}
+                      className={`flex items-center gap-2 text-sm shrink-0 ${
+                        project.status === 'complete' ? 'cursor-pointer hover:opacity-70' : ''
+                      }`}
+                      onClick={() => handleViewProject(project)}
+                    >
+                      <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-medium truncate max-w-[100px] sm:max-w-[140px]">{project.project_name}</span>
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${status.className}`}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">No projects yet</span>
+            )}
+            <Button variant="ghost" asChild size="sm" className="text-xs h-6 px-2 shrink-0">
+              <Link href="/dashboard/projects">All →</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
