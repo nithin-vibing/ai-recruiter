@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadResumes } from '@/components/screens/upload-resumes';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
 import { startScreening, subscribeToScreeningProgress, fetchCandidates } from '@/lib/api-client';
+import { supabase } from '@/lib/supabase';
 import type { PercentileThreshold } from '@/lib/types';
 
 export default function UploadResumesPage() {
@@ -22,11 +23,20 @@ export default function UploadResumesPage() {
   const [threshold, setThreshold] = useState<PercentileThreshold>(
     (currentProject?.percentileThreshold as PercentileThreshold) || 25
   );
+  const [isScreening, setIsScreening] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleThresholdChange = (newThreshold: PercentileThreshold) => {
     setThreshold(newThreshold);
     setPercentileThreshold(newThreshold);
   };
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const handleStartScreening = async (files: File[], percentile: PercentileThreshold) => {
     const projectId = sessionStorage.getItem('currentProjectId');
@@ -36,48 +46,78 @@ export default function UploadResumesPage() {
     }
 
     setPercentileThreshold(percentile);
+    setIsScreening(true);
 
     const zipFile = files[0];
-    let candidateCount = 0;
 
-    // Subscribe to real-time updates BEFORE starting screening
-    // Each time n8n writes a candidate to Supabase, this fires
-    const unsubscribe = subscribeToScreeningProgress(projectId, () => {
-      candidateCount++;
-      setScreeningProgress({
-        current: candidateCount,
-        total: 0, // We don't know total upfront — will update when screening completes
-        isComplete: false,
-      });
+    // Set initial progress
+    setScreeningProgress({
+      current: 0,
+      total: 0,
+      isComplete: false,
     });
 
-    try {
-      // Call n8n Workflow 2 — this blocks until all resumes are scored
-      await startScreening(projectId, zipFile);
+    // Subscribe to real-time updates — each candidate insert fires this
+    const unsubscribe = subscribeToScreeningProgress(projectId, () => {
+      // We'll use polling as the primary method since WebSocket may not always work
+    });
 
-      // Screening complete — fetch all candidates from Supabase
-      const candidates = await fetchCandidates(projectId);
+    // Start polling for candidates count every 3 seconds
+    pollingRef.current = setInterval(async () => {
+      try {
+        const { count } = await supabase
+          .from('candidates')
+          .select('*', { count: 'exact', head: true })
+          .eq('project_id', projectId);
 
-      setCandidates(candidates);
-      setScreeningProgress({
-        current: candidates.length,
-        total: candidates.length,
-        isComplete: true,
-      });
+        const currentCount = count || 0;
 
-      // Clean up subscription
-      unsubscribe();
+        // Check if project status is complete
+        const { data: project } = await supabase
+          .from('projects')
+          .select('status')
+          .eq('id', projectId)
+          .single();
 
-      // Wait a moment to show completion state
-      await new Promise(resolve => setTimeout(resolve, 1500));
+        setScreeningProgress({
+          current: currentCount,
+          total: currentCount, // Update as we go
+          isComplete: project?.status === 'complete',
+        });
 
-      setCurrentStep(3);
-      router.push('/dashboard/project/results');
-    } catch (error) {
-      console.error('Screening failed:', error);
-      unsubscribe();
-      alert('Screening failed. Please try again.');
-    }
+        if (project?.status === 'complete') {
+          // Stop polling
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          unsubscribe();
+
+          // Fetch all candidates
+          const candidates = await fetchCandidates(projectId);
+          setCandidates(candidates);
+
+          setScreeningProgress({
+            current: candidates.length,
+            total: candidates.length,
+            isComplete: true,
+          });
+
+          // Wait to show completion state
+          await new Promise(resolve => setTimeout(resolve, 1500));
+
+          setCurrentStep(3);
+          router.push('/dashboard/project/results');
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 3000);
+
+    // Fire the screening request — don't await it (it takes minutes)
+    // The API route may timeout, but n8n will keep processing
+    startScreening(projectId, zipFile).catch((error) => {
+      console.log('Screening request completed or timed out:', error?.message || 'done');
+      // This is expected — Vercel functions timeout after 10-60s
+      // n8n continues processing regardless
+    });
   };
 
   return (
