@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
-import { PDFParse } from 'pdf-parse';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse');
 
 const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: buffer });
-  await parser.load();
-  const result = await parser.getText();
-  return result.text || '';
+  const data = await pdfParse(buffer);
+  return data.text || '';
 }
 
 export async function POST(request: NextRequest) {
