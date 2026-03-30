@@ -84,9 +84,12 @@ export async function startScreening(
 async function uploadResumesToStorage(projectId: string, files: Map<string, Blob>) {
   const uploads = Array.from(files.entries()).map(async ([filename, blob]) => {
     const path = `${projectId}/${filename}`;
+    const contentType = filename.toLowerCase().endsWith('.pdf')
+      ? 'application/pdf'
+      : 'text/plain';
     const { error } = await supabase.storage
       .from('resumes')
-      .upload(path, blob, { upsert: true });
+      .upload(path, blob, { upsert: true, contentType });
     if (error) {
       console.warn(`Failed to upload ${filename}:`, error.message);
     }

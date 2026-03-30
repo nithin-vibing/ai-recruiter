@@ -63,12 +63,14 @@ export async function convertPdfZipToTextZip(
     if (lowerName.endsWith('.pdf')) {
       try {
         const pdfBuffer = await zipEntry.async('arraybuffer');
+        // Copy buffer BEFORE pdf.js processes it (pdf.js may neuter/transfer the original)
+        const pdfCopy = pdfBuffer.slice(0);
         const text = await extractTextFromPdf(pdfBuffer);
         if (text && text.trim().length > 50) {
           const txtName = baseName.replace(/\.pdf$/i, '.txt');
           textZip.file(txtName, text.trim());
           // Keep original PDF for storage upload
-          originalFiles.set(baseName, new Blob([pdfBuffer], { type: 'application/pdf' }));
+          originalFiles.set(baseName, new Blob([pdfCopy], { type: 'application/pdf' }));
           fileCount++;
         }
       } catch (e) {
