@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -12,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Upload, FileArchive, X, Play, CheckCircle } from 'lucide-react';
+import { Upload, FileArchive, X, Play, CheckCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PERCENTILE_OPTIONS, type PercentileThreshold, type ScreeningProgress } from '@/lib/types';
 
@@ -61,6 +60,18 @@ export function UploadResumes({
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const openFilePicker = () => {
+    if (isScreening) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleFile(file);
+    };
+    input.click();
+  };
+
   const handleStartScreening = async () => {
     if (!zipFile) return;
     await onStartScreening([zipFile], percentileThreshold);
@@ -68,69 +79,70 @@ export function UploadResumes({
 
   const isScreening = screeningProgress !== null && !screeningProgress.isComplete;
   const isComplete = screeningProgress?.isComplete === true;
-  const progressPercent = screeningProgress
-    ? (screeningProgress.current / screeningProgress.total) * 100
-    : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Dropzone */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-xl">Upload Resumes</CardTitle>
-          <CardDescription>
-            Upload a .zip archive containing resume files (.pdf or .txt). The AI will score each one against your approved rubric.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div
-            className={cn(
-              'relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all',
-              isDragOver
-                ? 'border-electric-blue bg-cloud-blue/50 scale-[1.01]'
-                : 'border-muted-foreground/20 bg-off-white hover:border-electric-blue/40 hover:bg-cloud-blue/20',
-              isScreening && 'pointer-events-none opacity-50'
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => {
-              if (isScreening) return;
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.zip';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) handleFile(file);
-              };
-              input.click();
-            }}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-electric-blue/10">
-                <Upload className="h-7 w-7 text-electric-blue" />
-              </div>
-              <div className="text-center">
-                <p className="font-display text-lg font-semibold text-foreground">
-                  {isDragOver ? 'Drop your ZIP here' : 'Drop resumes ZIP here'}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  or click to browse
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground/60">
-                .zip archive containing .pdf or .txt resume files
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-5">
 
-      {/* Selected File */}
-      {zipFile && (
+      {/* ── No file selected: Full dropzone ── */}
+      {!zipFile && !isScreening && !isComplete && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+          <CardHeader>
+            <CardTitle className="font-display text-xl">Upload Resumes</CardTitle>
+            <CardDescription>
+              Upload a .zip archive containing resume files (.pdf or .txt). AI will score each one against your approved rubric.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div
+              className={cn(
+                'relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all',
+                isDragOver
+                  ? 'border-electric-blue bg-cloud-blue/50 scale-[1.01]'
+                  : 'border-muted-foreground/20 bg-off-white hover:border-electric-blue/40 hover:bg-cloud-blue/20'
+              )}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={openFilePicker}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-electric-blue/10">
+                  <Upload className="h-6 w-6 text-electric-blue" />
+                </div>
+                <div className="text-center">
+                  <p className="font-display text-lg font-semibold text-foreground">
+                    {isDragOver ? 'Drop your ZIP here' : 'Drop resumes ZIP here'}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    or click to browse
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground/60">
+                  .zip archive containing .pdf or .txt resume files
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── File selected: Compact card with file info + options + start button ── */}
+      {zipFile && !isScreening && !isComplete && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-xl">Ready to Screen</CardTitle>
+            <CardDescription>
+              Review your file and screening options, then start screening.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* File info bar */}
+            <div
+              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-electric-blue/10">
                   <FileArchive className="h-5 w-5 text-electric-blue" />
@@ -140,7 +152,16 @@ export function UploadResumes({
                   <p className="text-xs text-muted-foreground">{formatFileSize(zipFile.size)}</p>
                 </div>
               </div>
-              {!isScreening && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
+                  className="text-muted-foreground hover:text-foreground text-xs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Change
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -149,26 +170,16 @@ export function UploadResumes({
                 >
                   <X className="h-4 w-4" />
                 </Button>
-              )}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Screening Options */}
-      {zipFile && !isComplete && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Screening Options</CardTitle>
-          </CardHeader>
-          <CardContent>
+            {/* Screening options + start button — inline */}
             <div className="flex items-end gap-4">
               <Field className="flex-1 max-w-xs">
                 <FieldLabel>Show top candidates</FieldLabel>
                 <Select
                   value={percentileThreshold.toString()}
                   onValueChange={(v) => onThresholdChange(parseInt(v) as PercentileThreshold)}
-                  disabled={isScreening}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -186,7 +197,6 @@ export function UploadResumes({
               <Button
                 className="bg-electric-blue hover:bg-deep-blue gap-2"
                 size="lg"
-                disabled={!zipFile || isScreening}
                 onClick={handleStartScreening}
               >
                 <Play className="h-4 w-4" />
@@ -197,11 +207,18 @@ export function UploadResumes({
         </Card>
       )}
 
-      {/* Progress */}
+      {/* ── Screening in progress ── */}
       {isScreening && screeningProgress && (
         <Card className="border-electric-blue/30">
           <CardContent className="p-6">
             <div className="space-y-4">
+              {/* File reminder */}
+              {zipFile && (
+                <div className="flex items-center gap-3 pb-4 border-b">
+                  <FileArchive className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{zipFile.name}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <p className="font-display font-semibold text-foreground">Screening in progress</p>
                 <span className="text-sm font-medium text-electric-blue">
@@ -219,7 +236,7 @@ export function UploadResumes({
         </Card>
       )}
 
-      {/* Complete */}
+      {/* ── Complete ── */}
       {isComplete && (
         <Card className="border-success/30 bg-success/5">
           <CardContent className="p-6">
