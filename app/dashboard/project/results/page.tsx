@@ -69,15 +69,15 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       {/* Header with Step Indicator */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
             Screening Results
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Step 3: Review and manage candidate evaluations
+          <p className="mt-1 text-sm text-muted-foreground">
+            Review candidates, update status, and export results
           </p>
         </div>
         <div className="flex items-center gap-4">

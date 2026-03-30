@@ -30,12 +30,12 @@ async function extractTextFromPdf(buffer: ArrayBuffer): Promise<string> {
  * Takes a ZIP file (containing PDFs and/or TXT files), extracts text from all
  * PDFs in the browser, and returns a new ZIP containing only .txt files.
  *
- * Returns { textZip: Blob, fileCount: number }
+ * Returns { textZip: Blob, fileCount: number, originalFiles: Map of filename → Blob }
  */
 export async function convertPdfZipToTextZip(
   zipFile: File,
   onProgress?: (current: number, total: number, fileName: string) => void
-): Promise<{ textZip: Blob; fileCount: number }> {
+): Promise<{ textZip: Blob; fileCount: number; originalFiles: Map<string, Blob> }> {
   const zipBuffer = await zipFile.arrayBuffer();
   const zip = await JSZip.loadAsync(zipBuffer);
 
@@ -49,6 +49,7 @@ export async function convertPdfZipToTextZip(
   });
 
   const textZip = new JSZip();
+  const originalFiles = new Map<string, Blob>();
   let fileCount = 0;
   let processed = 0;
 
@@ -66,6 +67,8 @@ export async function convertPdfZipToTextZip(
         if (text && text.trim().length > 50) {
           const txtName = baseName.replace(/\.pdf$/i, '.txt');
           textZip.file(txtName, text.trim());
+          // Keep original PDF for storage upload
+          originalFiles.set(baseName, new Blob([pdfBuffer], { type: 'application/pdf' }));
           fileCount++;
         }
       } catch (e) {
@@ -75,11 +78,13 @@ export async function convertPdfZipToTextZip(
       const text = await zipEntry.async('string');
       if (text && text.trim().length > 50) {
         textZip.file(baseName, text.trim());
+        // Keep original TXT for storage
+        originalFiles.set(baseName, new Blob([text], { type: 'text/plain' }));
         fileCount++;
       }
     }
   }
 
   const textZipBlob = await textZip.generateAsync({ type: 'blob' });
-  return { textZip: textZipBlob, fileCount };
+  return { textZip: textZipBlob, fileCount, originalFiles };
 }

@@ -47,13 +47,18 @@ export async function startScreening(
 ) {
   // Step 1: Convert PDFs to text in the browser
   const { convertPdfZipToTextZip } = await import('./pdf-extractor');
-  const { textZip, fileCount } = await convertPdfZipToTextZip(zipFile, onExtractionProgress);
+  const { textZip, fileCount, originalFiles } = await convertPdfZipToTextZip(zipFile, onExtractionProgress);
 
   if (fileCount === 0) {
     throw new Error('No readable resume files found in ZIP. Please upload PDFs or TXT files.');
   }
 
-  // Step 2: Send text-only ZIP to API route → n8n
+  // Step 2: Upload original files to Supabase Storage (non-blocking)
+  uploadResumesToStorage(projectId, originalFiles).catch((err) => {
+    console.warn('Failed to upload resumes to storage (non-critical):', err);
+  });
+
+  // Step 3: Send text-only ZIP to API route → n8n
   const formData = new FormData();
   formData.append('projectId', projectId);
   formData.append('resumesZip', textZip, 'resumes.zip');
@@ -68,6 +73,35 @@ export async function startScreening(
   }
 
   return response.json();
+}
+
+// ─── Screen 2: Upload Resumes to Supabase Storage ────────────────────────────
+
+/**
+ * Upload original resume files to Supabase Storage for later viewing.
+ * Files are stored as resumes/{projectId}/{filename}
+ */
+async function uploadResumesToStorage(projectId: string, files: Map<string, Blob>) {
+  const uploads = Array.from(files.entries()).map(async ([filename, blob]) => {
+    const path = `${projectId}/${filename}`;
+    const { error } = await supabase.storage
+      .from('resumes')
+      .upload(path, blob, { upsert: true });
+    if (error) {
+      console.warn(`Failed to upload ${filename}:`, error.message);
+    }
+  });
+  await Promise.all(uploads);
+}
+
+/**
+ * Get a public URL for a resume file in Supabase Storage.
+ */
+export function getResumeUrl(projectId: string, filename: string): string {
+  const { data } = supabase.storage
+    .from('resumes')
+    .getPublicUrl(`${projectId}/${filename}`);
+  return data.publicUrl;
 }
 
 // ─── Screen 2: Real-time Progress ────────────────────────────────────────────
@@ -117,20 +151,31 @@ export async function fetchCandidates(projectId: string): Promise<Candidate[]> {
   if (error) throw new Error(`Failed to fetch candidates: ${error.message}`);
 
   // Map Supabase column names (snake_case) to frontend types (camelCase)
-  return (data || []).map((row, index) => ({
-    id: row.id,
-    projectId: row.project_id,
-    rank: index + 1,
-    name: row.candidate_name || 'Unknown',
-    email: row.email || '',
-    phone: row.phone || '',
-    linkedIn: row.linkedin || '',
-    totalScore: Number(row.score) || 0,
-    scores: [], // Per-criterion scores stored in raw_response if needed
-    reasoning: row.reasoning || '',
-    status: row.status || 'pending',
-    comments: row.user_comment || '',
-  }));
+  return (data || []).map((row, index) => {
+    // Build resume URL from source_filename if available
+    let resumeUrl: string | undefined;
+    if (row.source_filename) {
+      // source_filename is the .txt name; try .pdf version first
+      const pdfName = row.source_filename.replace(/\.txt$/i, '.pdf');
+      resumeUrl = getResumeUrl(row.project_id, pdfName);
+    }
+
+    return {
+      id: row.id,
+      projectId: row.project_id,
+      rank: index + 1,
+      name: row.candidate_name || 'Unknown',
+      email: row.email || '',
+      phone: row.phone || '',
+      linkedIn: row.linkedin || '',
+      totalScore: Number(row.score) || 0,
+      scores: [],
+      reasoning: row.reasoning || '',
+      status: row.status || 'pending',
+      comments: row.user_comment || '',
+      resumeUrl,
+    };
+  });
 }
 
 // ─── Screen 3: Update Candidate ──────────────────────────────────────────────
