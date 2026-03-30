@@ -199,7 +199,7 @@ export function ResultsTable({
       </div>
 
       {/* ── Master-Detail Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4" style={{ minHeight: 'calc(100vh - 320px)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4" style={{ height: 'calc(100vh - 320px)' }}>
 
         {/* ── Left: Candidate list ── */}
         <Card className="overflow-hidden flex flex-col">
@@ -313,28 +313,28 @@ export function ResultsTable({
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
               {detailTab === 'reasoning' && (
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                   {selectedCandidate.reasoning || 'No reasoning available.'}
                 </p>
               )}
               {detailTab === 'resume' && (
-                <div>
+                <div className="h-full flex flex-col">
                   {selectedCandidate.resumeUrl ? (
-                    <div className="space-y-3">
+                    <div className="flex flex-col flex-1 gap-2">
                       <a
                         href={selectedCandidate.resumeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-electric-blue hover:underline"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-electric-blue hover:underline shrink-0"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Open Resume (PDF)
                       </a>
                       <iframe
                         src={selectedCandidate.resumeUrl}
-                        className="w-full h-[500px] rounded-lg border"
+                        className="w-full flex-1 min-h-0 rounded-lg border"
                         title={`Resume - ${selectedCandidate.name}`}
                       />
                     </div>
