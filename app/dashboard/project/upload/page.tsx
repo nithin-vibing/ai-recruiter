@@ -50,10 +50,12 @@ export default function UploadResumesPage() {
     // Check resume limit before screening
     if (user?.id) {
       try {
-        // We don't know exact count until extraction, but check if already at limit
         const resumeCheck = await canScreenResumes(user.id, 0);
         if (resumeCheck.remaining <= 0) {
-          alert(`You've reached your free tier limit of ${resumeCheck.limit} resumes this month. Upgrade to Pro for 500 resumes/month.`);
+          const upgrade = confirm(
+            `You've screened ${resumeCheck.current} of ${resumeCheck.limit} resumes this month (free tier).\n\nUpgrade to Pro for 500 resumes/month?\n\nClick OK to see pricing, or Cancel to go back.`
+          );
+          if (upgrade) router.push('/dashboard/pricing');
           return;
         }
       } catch (err) {

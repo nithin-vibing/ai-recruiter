@@ -137,7 +137,10 @@ export default function CreateProjectPage() {
               <Button variant="outline" onClick={() => router.push('/dashboard')}>
                 Back to Dashboard
               </Button>
-              <Button className="bg-electric-blue hover:bg-electric-blue/90">
+              <Button
+                className="bg-electric-blue hover:bg-electric-blue/90"
+                onClick={() => router.push('/dashboard/pricing')}
+              >
                 Upgrade to Pro — $29/mo
               </Button>
             </div>
