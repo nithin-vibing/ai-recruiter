@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Plus, FolderOpen, User } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LayoutDashboard, Plus, FolderOpen, User, LogOut } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,6 +27,11 @@ function SupaevalIcon({ size = 32 }: { size?: number }) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const avatarUrl = user?.user_metadata?.avatar_url;
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
@@ -66,14 +72,22 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-              <User className="h-4 w-4" />
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs font-medium">
+              {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 truncate">
-            <p className="text-sm font-medium">Nithin Varada</p>
-            <p className="text-xs text-sidebar-foreground/60">PM</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{displayName}</p>
+            <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
           </div>
+          <button
+            onClick={signOut}
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-sidebar-accent/50 transition-colors shrink-0"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4 text-sidebar-foreground/60" />
+          </button>
         </div>
       </div>
     </aside>
