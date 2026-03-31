@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Plus, FolderOpen, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderOpen, CreditCard, User, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth-context';
 
@@ -11,16 +11,13 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/project/create', label: 'New Project', icon: Plus },
   { href: '/dashboard/projects', label: 'Past Projects', icon: FolderOpen },
+  { href: '/dashboard/pricing', label: 'Pricing', icon: CreditCard },
 ];
 
-function SupaevalIcon({ size = 32 }: { size?: number }) {
+function MugIcon({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="58" height="58" rx="14" fill="#0A0A0F"/>
-      <path d="M12 40 A20 20 0 1 1 46 40" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.2"/>
-      <path d="M16 36 L26 29 L16 22" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M26 36 L36 29 L26 22" stroke="#1B6FEE" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <circle cx="43" cy="40" r="3" fill="#1B6FEE"/>
+    <svg width={size} height={size} viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#1B6FEE" d="M184 48C170.7 48 160 58.7 160 72C160 110.9 183.4 131.4 199.1 145.1L200.2 146.1C216.5 160.4 224 167.9 224 184C224 197.3 234.7 208 248 208C261.3 208 272 197.3 272 184C272 145.1 248.6 124.6 232.9 110.9L231.8 109.9C215.5 95.7 208 88.1 208 72C208 58.7 197.3 48 184 48zM128 256C110.3 256 96 270.3 96 288L96 480C96 533 139 576 192 576L384 576C425.8 576 461.4 549.3 474.5 512L480 512C550.7 512 608 454.7 608 384C608 313.3 550.7 256 480 256L128 256zM480 448L480 320C515.3 320 544 348.7 544 384C544 419.3 515.3 448 480 448zM320 72C320 58.7 309.3 48 296 48C282.7 48 272 58.7 272 72C272 110.9 295.4 131.4 311.1 145.1L312.2 146.1C328.5 160.4 336 167.9 336 184C336 197.3 346.7 208 360 208C373.3 208 384 197.3 384 184C384 145.1 360.6 124.6 344.9 110.9L343.8 109.9C327.5 95.7 320 88.1 320 72z"/>
     </svg>
   );
 }
@@ -37,7 +34,7 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-        <SupaevalIcon size={28} />
+        <MugIcon size={28} />
         <span className="font-display text-xl font-extrabold" style={{ letterSpacing: '-0.035em' }}>
           <span className="text-white">AI</span>
           <span className="text-electric-blue">Recruiter</span>

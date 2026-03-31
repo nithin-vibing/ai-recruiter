@@ -199,7 +199,7 @@ export function ResultsTable({
       </div>
 
       {/* ── Master-Detail Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4" style={{ height: 'calc(100vh - 320px)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4" style={{ height: 'calc(100vh - 260px)' }}>
 
         {/* ── Left: Candidate list ── */}
         <Card className="overflow-hidden flex flex-col">
@@ -334,7 +334,8 @@ export function ResultsTable({
                       </a>
                       <iframe
                         src={selectedCandidate.resumeUrl}
-                        className="w-full flex-1 min-h-0 rounded-lg border"
+                        className="w-full flex-1 rounded-lg border"
+                        style={{ minHeight: '500px' }}
                         title={`Resume - ${selectedCandidate.name}`}
                       />
                     </div>
@@ -350,27 +351,38 @@ export function ResultsTable({
             </div>
 
             {/* Bottom: Status + Comments + Navigation */}
-            <div className="border-t p-4 space-y-3 shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground w-16">Status</span>
-                <Select
-                  value={selectedCandidate.status}
-                  onValueChange={(v) => onStatusChange(selectedCandidate.id, v as CandidateStatus)}
-                >
-                  <SelectTrigger className={cn('h-9 w-40', statusColors[selectedCandidate.status])}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                    <SelectItem value="hold">Hold</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="border-t px-4 py-3 space-y-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-muted-foreground">Status</span>
+                  <Select
+                    value={selectedCandidate.status}
+                    onValueChange={(v) => onStatusChange(selectedCandidate.id, v as CandidateStatus)}
+                  >
+                    <SelectTrigger className={cn('h-8 w-36', statusColors[selectedCandidate.status])}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                      <SelectItem value="hold">Hold</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-7" disabled={selectedIndex <= 0} onClick={navigatePrev}>
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                  </Button>
+                  <span className="text-xs text-muted-foreground tabular-nums">{selectedIndex + 1} of {filteredCandidates.length}</span>
+                  <Button variant="ghost" size="sm" className="h-7" disabled={selectedIndex >= filteredCandidates.length - 1} onClick={navigateNext}>
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <span className="text-sm font-medium text-muted-foreground w-16 pt-2">Notes</span>
+                <span className="text-sm font-medium text-muted-foreground pt-1.5">Notes</span>
                 {editingComments ? (
                   <div className="flex-1 flex gap-2">
                     <Textarea
@@ -387,7 +399,7 @@ export function ResultsTable({
                   </div>
                 ) : (
                   <button
-                    className="flex-1 text-left text-sm px-3 py-2 rounded-md border border-dashed hover:bg-muted/50 transition-colors text-muted-foreground"
+                    className="flex-1 text-left text-sm px-3 py-1.5 rounded-md border border-dashed hover:bg-muted/50 transition-colors text-muted-foreground"
                     onClick={startEditComments}
                   >
                     {selectedCandidate.comments || (
@@ -398,16 +410,6 @@ export function ResultsTable({
                     )}
                   </button>
                 )}
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t">
-                <Button variant="ghost" size="sm" disabled={selectedIndex <= 0} onClick={navigatePrev}>
-                  <ChevronLeft className="h-4 w-4" /> Previous
-                </Button>
-                <span className="text-xs text-muted-foreground">{selectedIndex + 1} of {filteredCandidates.length}</span>
-                <Button variant="ghost" size="sm" disabled={selectedIndex >= filteredCandidates.length - 1} onClick={navigateNext}>
-                  Next <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </Card>
