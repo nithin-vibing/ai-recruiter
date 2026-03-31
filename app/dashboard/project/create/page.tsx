@@ -6,11 +6,12 @@ import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { generateRubric, fetchRubric, claimProject } from '@/lib/api-client';
+import { generateRubric, fetchRubric, claimProject, canCreateProject, incrementProjectCount } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, ChevronDown, Lock } from 'lucide-react';
 import type { RubricCriterion } from '@/lib/types';
 
 export default function CreateProjectPage() {
@@ -26,7 +27,20 @@ export default function CreateProjectPage() {
   const [originalRubric, setOriginalRubric] = useState<RubricCriterion[]>([]);
   const rubricRef = useRef<HTMLDivElement>(null);
 
+  const [limitReached, setLimitReached] = useState(false);
+  const [usageInfo, setUsageInfo] = useState<{ current: number; limit: number } | null>(null);
+
   const handleGenerateRubric = async (data: { name: string; roleName: string; jobDescription: string }) => {
+    if (!user?.id) return;
+
+    // Check free tier project limit
+    const projectCheck = await canCreateProject(user.id);
+    if (!projectCheck.allowed) {
+      setLimitReached(true);
+      setUsageInfo({ current: projectCheck.current, limit: projectCheck.limit });
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const result = await generateRubric(data);
@@ -35,10 +49,13 @@ export default function CreateProjectPage() {
 
       if (pid) {
         setProjectId(pid);
-        // Claim project for the logged-in user
+        // Claim project for the logged-in user and increment usage
         if (user?.id) {
           claimProject(pid, user.id).catch((err) =>
             console.error('Failed to claim project:', err)
+          );
+          incrementProjectCount(user.id).catch((err) =>
+            console.error('Failed to increment project count:', err)
           );
         }
       }
@@ -104,8 +121,32 @@ export default function CreateProjectPage() {
         <StepIndicator currentStep={1} />
       </div>
 
+      {/* Limit Reached Banner */}
+      {limitReached && usageInfo && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="p-6 text-center space-y-3">
+            <Lock className="h-10 w-10 text-amber-500 mx-auto" />
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Free Tier Limit Reached
+            </h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              You&apos;ve created {usageInfo.current} of {usageInfo.limit} projects this month on the free plan.
+              Upgrade to Pro for unlimited projects and 500 resumes/month.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                Back to Dashboard
+              </Button>
+              <Button className="bg-electric-blue hover:bg-electric-blue/90">
+                Upgrade to Pro — $29/mo
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Content */}
-      <div className="space-y-5">
+      <div className="space-y-5" style={{ display: limitReached ? 'none' : undefined }}>
         {/* When rubric is showing, collapse form to a summary bar */}
         {showRubric && formData ? (
           <Card

@@ -223,6 +223,111 @@ export async function claimProject(projectId: string, userId: string) {
   if (error) throw new Error(`Failed to claim project: ${error.message}`);
 }
 
+// ─── Usage Tracking & Free Tier Limits ──────────────────────────────────────
+
+const FREE_TIER_LIMITS = {
+  maxProjects: 3,
+  maxResumes: 100,
+};
+
+/**
+ * Get the current month string in YYYY-MM format.
+ */
+function getCurrentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Get or create the usage record for a user in the current month.
+ */
+export async function getUsage(userId: string) {
+  const month = getCurrentMonth();
+
+  // Try to fetch existing usage row
+  const { data, error } = await supabase
+    .from('usage')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('month', month)
+    .single();
+
+  if (data) return data;
+
+  // No row yet — create one
+  if (error?.code === 'PGRST116') {
+    const { data: newRow, error: insertError } = await supabase
+      .from('usage')
+      .insert({ user_id: userId, month, projects_created: 0, resumes_screened: 0 })
+      .select()
+      .single();
+
+    if (insertError) throw new Error(`Failed to create usage record: ${insertError.message}`);
+    return newRow;
+  }
+
+  throw new Error(`Failed to fetch usage: ${error?.message}`);
+}
+
+/**
+ * Check if the user can create a new project (under free tier limit).
+ */
+export async function canCreateProject(userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
+  const usage = await getUsage(userId);
+  return {
+    allowed: usage.projects_created < FREE_TIER_LIMITS.maxProjects,
+    current: usage.projects_created,
+    limit: FREE_TIER_LIMITS.maxProjects,
+  };
+}
+
+/**
+ * Check if the user can screen more resumes (under free tier limit).
+ * resumeCount = number of resumes in the current upload.
+ */
+export async function canScreenResumes(userId: string, resumeCount: number): Promise<{ allowed: boolean; current: number; limit: number; remaining: number }> {
+  const usage = await getUsage(userId);
+  const remaining = FREE_TIER_LIMITS.maxResumes - usage.resumes_screened;
+  return {
+    allowed: usage.resumes_screened + resumeCount <= FREE_TIER_LIMITS.maxResumes,
+    current: usage.resumes_screened,
+    limit: FREE_TIER_LIMITS.maxResumes,
+    remaining: Math.max(0, remaining),
+  };
+}
+
+/**
+ * Increment project count for the current month.
+ */
+export async function incrementProjectCount(userId: string) {
+  const usage = await getUsage(userId);
+  const { error } = await supabase
+    .from('usage')
+    .update({
+      projects_created: usage.projects_created + 1,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', usage.id);
+
+  if (error) throw new Error(`Failed to increment project count: ${error.message}`);
+}
+
+/**
+ * Increment resume count for the current month.
+ */
+export async function incrementResumeCount(userId: string, count: number) {
+  const usage = await getUsage(userId);
+  const { error } = await supabase
+    .from('usage')
+    .update({
+      resumes_screened: usage.resumes_screened + count,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', usage.id);
+
+  if (error) throw new Error(`Failed to increment resume count: ${error.message}`);
+}
+
 // ─── Dashboard: Fetch Projects ───────────────────────────────────────────────
 
 /**

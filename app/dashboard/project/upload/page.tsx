@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { UploadResumes } from '@/components/screens/upload-resumes';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { startScreening, subscribeToScreeningProgress, fetchCandidates } from '@/lib/api-client';
+import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScreenResumes, incrementResumeCount } from '@/lib/api-client';
+import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import type { PercentileThreshold } from '@/lib/types';
 
 export default function UploadResumesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const {
     currentProject,
     setPercentileThreshold,
@@ -43,6 +45,20 @@ export default function UploadResumesPage() {
     if (!projectId) {
       alert('No project found. Please go back to Step 1 and create a project first.');
       return;
+    }
+
+    // Check resume limit before screening
+    if (user?.id) {
+      try {
+        // We don't know exact count until extraction, but check if already at limit
+        const resumeCheck = await canScreenResumes(user.id, 0);
+        if (resumeCheck.remaining <= 0) {
+          alert(`You've reached your free tier limit of ${resumeCheck.limit} resumes this month. Upgrade to Pro for 500 resumes/month.`);
+          return;
+        }
+      } catch (err) {
+        console.warn('Usage check failed, proceeding:', err);
+      }
     }
 
     setPercentileThreshold(percentile);
@@ -94,6 +110,13 @@ export default function UploadResumesPage() {
           const candidates = await fetchCandidates(projectId);
           setCandidates(candidates);
 
+          // Track resume usage
+          if (user?.id && candidates.length > 0) {
+            incrementResumeCount(user.id, candidates.length).catch((err) =>
+              console.warn('Failed to track resume usage:', err)
+            );
+          }
+
           setScreeningProgress({
             current: candidates.length,
             total: candidates.length,
@@ -118,6 +141,12 @@ export default function UploadResumesPage() {
       // This is expected — Vercel functions timeout after 10-60s
       // n8n continues processing regardless
     });
+
+    // Increment resume count (we use file count from the ZIP)
+    // This runs after extraction, so we count the actual resumes processed
+    if (user?.id) {
+      // We'll count candidates when screening completes (in the polling loop)
+    }
   };
 
   return (
