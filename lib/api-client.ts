@@ -207,16 +207,39 @@ export async function updateCandidateComment(candidateId: string, comment: strin
   if (error) throw new Error(`Failed to update comment: ${error.message}`);
 }
 
+// ─── User Scoping ────────────────────────────────────────────────────────────
+
+/**
+ * Claim a project for the current user.
+ * Called after n8n creates the project (with anon key, so user_id is null).
+ * This sets user_id to the logged-in user's ID.
+ */
+export async function claimProject(projectId: string, userId: string) {
+  const { error } = await supabase
+    .from('projects')
+    .update({ user_id: userId })
+    .eq('id', projectId);
+
+  if (error) throw new Error(`Failed to claim project: ${error.message}`);
+}
+
 // ─── Dashboard: Fetch Projects ───────────────────────────────────────────────
 
 /**
  * Fetch all projects for the dashboard.
+ * Filters by user_id if provided.
  */
-export async function fetchProjects() {
-  const { data, error } = await supabase
+export async function fetchProjects(userId?: string) {
+  let query = supabase
     .from('projects')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Failed to fetch projects: ${error.message}`);
   return data || [];

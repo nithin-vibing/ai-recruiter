@@ -11,6 +11,7 @@ import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2 } from 'lucide-r
 import { fetchProjects, fetchCandidates } from '@/lib/api-client';
 import { supabase } from '@/lib/supabase';
 import { useProject } from '@/lib/project-context';
+import { useAuth } from '@/lib/auth-context';
 
 interface ProjectWithCounts {
   id: string;
@@ -33,13 +34,16 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 export default function ProjectsPage() {
   const router = useRouter();
   const { setCandidates, setProjectDetails, setCurrentStep } = useProject();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+
     async function loadProjects() {
       try {
-        const rawProjects = await fetchProjects();
+        const rawProjects = await fetchProjects(user!.id);
 
         // Fetch candidate counts for each project
         const projectsWithCounts = await Promise.all(
@@ -85,7 +89,7 @@ export default function ProjectsPage() {
     }
 
     loadProjects();
-  }, []);
+  }, [user]);
 
   const handleViewResults = async (project: ProjectWithCounts) => {
     // Store projectId and load candidates into context

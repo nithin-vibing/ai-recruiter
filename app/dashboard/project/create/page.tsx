@@ -6,7 +6,8 @@ import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { generateRubric, fetchRubric } from '@/lib/api-client';
+import { generateRubric, fetchRubric, claimProject } from '@/lib/api-client';
+import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ChevronDown } from 'lucide-react';
@@ -15,6 +16,7 @@ import type { RubricCriterion } from '@/lib/types';
 export default function CreateProjectPage() {
   const router = useRouter();
   const { setProjectDetails, setRubric, currentProject, setCurrentStep } = useProject();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>([]);
   const [showRubric, setShowRubric] = useState(false);
@@ -33,6 +35,12 @@ export default function CreateProjectPage() {
 
       if (pid) {
         setProjectId(pid);
+        // Claim project for the logged-in user
+        if (user?.id) {
+          claimProject(pid, user.id).catch((err) =>
+            console.error('Failed to claim project:', err)
+          );
+        }
       }
 
       const mappedRubric: RubricCriterion[] = rubricArray.map((row: Record<string, unknown>) => ({

@@ -9,6 +9,7 @@ import { Plus, ArrowRight, FileText, Upload, Users, FolderOpen } from 'lucide-re
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
+import { useAuth } from '@/lib/auth-context';
 
 interface RecentProject {
   id: string;
@@ -28,24 +29,41 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 export default function DashboardPage() {
   const router = useRouter();
   const { setCandidates, setProjectDetails, setCurrentStep } = useProject();
+  const { user } = useAuth();
   const [stats, setStats] = useState({ projects: 0, candidates: 0, avgTopScore: 0 });
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
 
   useEffect(() => {
+    if (!user) return;
+
     async function loadDashboard() {
       try {
         const { count: projectCount } = await supabase
           .from('projects')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user!.id);
 
-        const { count: candidateCount } = await supabase
-          .from('candidates')
-          .select('*', { count: 'exact', head: true });
+        // Get all project IDs for this user to count their candidates
+        const { data: userProjects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user!.id);
+
+        const projectIds = (userProjects || []).map(p => p.id);
+        let candidateCount = 0;
+        if (projectIds.length > 0) {
+          const { count } = await supabase
+            .from('candidates')
+            .select('*', { count: 'exact', head: true })
+            .in('project_id', projectIds);
+          candidateCount = count || 0;
+        }
 
         const { data: completedProjects } = await supabase
           .from('projects')
           .select('id')
-          .eq('status', 'complete');
+          .eq('status', 'complete')
+          .eq('user_id', user!.id);
 
         let avgTopScore = 0;
         if (completedProjects && completedProjects.length > 0) {
@@ -67,13 +85,14 @@ export default function DashboardPage() {
 
         setStats({
           projects: projectCount || 0,
-          candidates: candidateCount || 0,
+          candidates: candidateCount,
           avgTopScore,
         });
 
         const { data: recent } = await supabase
           .from('projects')
           .select('id, project_name, role_name, status, created_at')
+          .eq('user_id', user!.id)
           .order('created_at', { ascending: false })
           .limit(2);
 
@@ -84,7 +103,7 @@ export default function DashboardPage() {
     }
 
     loadDashboard();
-  }, []);
+  }, [user]);
 
   const handleViewProject = async (project: RecentProject) => {
     if (project.status !== 'complete') return;
