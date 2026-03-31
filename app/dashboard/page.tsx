@@ -176,7 +176,7 @@ export default function DashboardPage() {
                   <FileText className="h-[18px] w-[18px] text-electric-blue" />
                 </div>
                 <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Define Criteria</h3>
-                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">1</span>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">1</span>
               </div>
               <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Paste the JD.<br />AI builds the rubric. Edit or Approve.
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                   <Upload className="h-[18px] w-[18px] text-success" />
                 </div>
                 <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Upload Resumes</h3>
-                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">2</span>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">2</span>
               </div>
               <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Upload a ZIP file.<br />AI scores each resume.
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                   <Users className="h-[18px] w-[18px] text-warning" />
                 </div>
                 <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Review & Shortlist</h3>
-                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/[0.12] leading-none">3</span>
+                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">3</span>
               </div>
               <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
                 Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
