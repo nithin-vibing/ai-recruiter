@@ -1,6 +1,7 @@
 // API Client for n8n Webhook + Supabase Integration
 
-import { supabase } from './supabase';
+import { createClient } from './supabase/client';
+const supabase = createClient();
 import type { Candidate, CandidateStatus } from './types';
 
 // ─── Screen 1: Generate Rubric ───────────────────────────────────────────────
