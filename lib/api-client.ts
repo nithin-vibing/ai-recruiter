@@ -336,6 +336,38 @@ export async function incrementResumeCount(userId: string, count: number) {
   if (error) throw new Error(`Failed to increment resume count: ${error.message}`);
 }
 
+// ─── Data Flywheel: Override Tracking ────────────────────────────────────────
+
+/**
+ * Log a recruiter override — fired whenever a candidate status changes.
+ * Captures AI score + rank at the time of override so we can measure
+ * where human judgment diverges from AI ranking.
+ * Non-critical: errors are swallowed to never block the main flow.
+ */
+export async function logCandidateOverride(
+  candidateId: string,
+  projectId: string,
+  previousStatus: string,
+  newStatus: string,
+  aiScore: number,
+  aiRank: number
+) {
+  const { error } = await supabase
+    .from('candidate_overrides')
+    .insert({
+      candidate_id: candidateId,
+      project_id: projectId,
+      ai_score: aiScore,
+      ai_rank: aiRank,
+      previous_status: previousStatus,
+      new_status: newStatus,
+    });
+
+  if (error) {
+    console.warn('Failed to log override (non-critical):', error.message);
+  }
+}
+
 // ─── Dashboard: Fetch Projects ───────────────────────────────────────────────
 
 /**

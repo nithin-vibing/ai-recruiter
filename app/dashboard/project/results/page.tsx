@@ -5,7 +5,7 @@ import { ResultsTable } from '@/components/screens/results-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { Button } from '@/components/ui/button';
 import { useProject } from '@/lib/project-context';
-import { updateCandidateStatus as updateStatusInDb, updateCandidateComment as updateCommentInDb } from '@/lib/api-client';
+import { updateCandidateStatus as updateStatusInDb, updateCandidateComment as updateCommentInDb, logCandidateOverride } from '@/lib/api-client';
 import { Plus } from 'lucide-react';
 import type { CandidateStatus } from '@/lib/types';
 
@@ -20,13 +20,30 @@ export default function ResultsPage() {
   } = useProject();
 
   const handleStatusChange = async (candidateId: string, status: CandidateStatus) => {
+    // Capture previous status + AI metadata before updating local state
+    const candidate = candidates.find(c => c.id === candidateId);
+    const previousStatus = candidate?.status || 'pending';
+
     // Update locally (instant UI feedback)
     updateCandidateStatus(candidateId, status);
+
     // Persist to Supabase
     try {
       await updateStatusInDb(candidateId, status);
     } catch (error) {
       console.error('Failed to save status:', error);
+    }
+
+    // Log override for flywheel analytics (non-blocking, non-critical)
+    if (candidate && currentProject?.id) {
+      logCandidateOverride(
+        candidateId,
+        currentProject.id,
+        previousStatus,
+        status,
+        candidate.totalScore,
+        candidate.rank
+      ).catch(() => {}); // swallow errors — never block the recruiter
     }
   };
 
