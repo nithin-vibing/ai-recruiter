@@ -149,19 +149,39 @@ export function ResultsTable({
   };
 
   const exportToCsv = () => {
-    const headers = ['Rank', 'Name', 'Email', 'Phone', 'LinkedIn', 'Score', 'Reasoning', 'Status', 'Comments'];
-    const rows = filteredCandidates.map(c => [
-      c.rank, c.name, c.email, c.phone, c.linkedIn, c.totalScore, c.reasoning, c.status, c.comments,
-    ]);
+    // Collect all unique criterion names across candidates for dynamic columns
+    const criterionNames = Array.from(
+      new Set(candidates.flatMap(c => c.scores.map(s => s.criterionName)))
+    );
+
+    const baseHeaders = ['Rank', 'Name', 'Email', 'Phone', 'LinkedIn', 'Total Score', 'Status', 'Confidence', 'Notes', 'Reasoning'];
+    const criterionHeaders = criterionNames.flatMap(n => [`${n} (score)`, `${n} (max)`, `${n} (evidence)`]);
+    const headers = [...baseHeaders, ...criterionHeaders];
+
+    const rows = filteredCandidates.map(c => {
+      const scoreMap = Object.fromEntries(c.scores.map(s => [s.criterionName, s]));
+      const base = [
+        c.rank, c.name, c.email, c.phone, c.linkedIn,
+        c.totalScore, c.status, c.confidence ?? '', c.comments, c.reasoning,
+      ];
+      const criterionCells = criterionNames.flatMap(n => {
+        const s = scoreMap[n];
+        return s ? [s.score, s.maxScore, s.evidence] : ['', '', ''];
+      });
+      return [...base, ...criterionCells];
+    });
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
     ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${projectName.replace(/\s+/g, '_')}_results.csv`;
+    link.download = `${projectName.replace(/\s+/g, '_')}_${roleName.replace(/\s+/g, '_')}_results.csv`;
     link.click();
+    URL.revokeObjectURL(link.href);
   };
 
   const statCounts = useMemo(() => ({

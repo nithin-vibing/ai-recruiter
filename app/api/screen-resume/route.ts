@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
 
 export async function POST(request: NextRequest) {
+  // Auth guard — reject unauthenticated requests
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     console.log('Screen resume API called');
 

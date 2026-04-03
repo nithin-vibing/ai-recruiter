@@ -118,8 +118,8 @@ export default function LoginPage() {
           </div>
           <div className="grid grid-cols-3 gap-4 pt-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-              <p className="text-2xl font-bold text-electric-blue">3 min</p>
-              <p className="text-xs text-white/50 mt-1">Avg. screening time</p>
+              <p className="text-2xl font-bold text-electric-blue">~10 min</p>
+              <p className="text-xs text-white/50 mt-1">Per 50 resumes</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
               <p className="text-2xl font-bold text-electric-blue">100+</p>
