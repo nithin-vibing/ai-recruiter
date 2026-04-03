@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowRight, FileText, Upload, Users, FolderOpen } from 'lucide-react';
+import { Plus, ArrowRight, FileText, Upload, Users, FolderOpen, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
 import { useAuth } from '@/lib/auth-context';
+import { toast } from 'sonner';
 
 interface RecentProject {
   id: string;
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ projects: 0, candidates: 0, avgTopScore: 0 });
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
+  const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -99,6 +101,7 @@ export default function DashboardPage() {
         setRecentProjects(recent || []);
       } catch (error) {
         console.error('Failed to load dashboard:', error);
+        toast.error('Failed to load dashboard data.');
       }
     }
 
@@ -106,17 +109,24 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleViewProject = async (project: RecentProject) => {
-    if (project.status !== 'complete') return;
-    sessionStorage.setItem('currentProjectId', project.id);
-    setProjectDetails({
-      name: project.project_name,
-      roleName: project.role_name,
-      jobDescription: '',
-    });
-    const candidates = await fetchCandidates(project.id);
-    setCandidates(candidates);
-    setCurrentStep(3);
-    router.push('/dashboard/project/results');
+    if (project.status !== 'complete' || loadingProjectId) return;
+    setLoadingProjectId(project.id);
+    try {
+      sessionStorage.setItem('currentProjectId', project.id);
+      setProjectDetails({
+        name: project.project_name,
+        roleName: project.role_name,
+        jobDescription: '',
+      });
+      const candidates = await fetchCandidates(project.id);
+      setCandidates(candidates);
+      setCurrentStep(3);
+      router.push('/dashboard/project/results');
+    } catch (error) {
+      console.error('Failed to load project:', error);
+      toast.error('Failed to load project. Please try again.');
+      setLoadingProjectId(null);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -280,9 +290,13 @@ export default function DashboardPage() {
                     onClick={() => handleViewProject(project)}
                   >
                     <span className="text-[0.82rem] font-medium text-foreground">{project.project_name}</span>
-                    <Badge variant="outline" className={`text-[0.68rem] font-semibold px-2 py-0.5 rounded-[5px] border-0 ${status.className}`}>
-                      {status.label}
-                    </Badge>
+                    {loadingProjectId === project.id ? (
+                      <Loader2 className="h-3.5 w-3.5 text-electric-blue animate-spin shrink-0" />
+                    ) : (
+                      <Badge variant="outline" className={`text-[0.68rem] font-semibold px-2 py-0.5 rounded-[5px] border-0 ${status.className}`}>
+                        {status.label}
+                      </Badge>
+                    )}
                   </div>
                 );
               })

@@ -393,7 +393,7 @@ export function ResultsTable({
               {detailTab === 'resume' && (
                 <div className="h-full flex flex-col">
                   {selectedCandidate.resumeUrl ? (
-                    <div className="flex flex-col flex-1 gap-2">
+                    <div className="flex flex-col h-full gap-2">
                       <a
                         href={selectedCandidate.resumeUrl}
                         target="_blank"
@@ -401,14 +401,29 @@ export function ResultsTable({
                         className="inline-flex items-center gap-2 text-sm font-medium text-electric-blue hover:underline shrink-0"
                       >
                         <ExternalLink className="h-4 w-4" />
-                        Open Resume (PDF)
+                        Open in new tab
                       </a>
-                      <iframe
-                        src={selectedCandidate.resumeUrl}
+                      <object
+                        data={selectedCandidate.resumeUrl}
+                        type="application/pdf"
                         className="w-full flex-1 rounded-lg border"
-                        style={{ minHeight: '500px' }}
+                        style={{ minHeight: '400px' }}
                         title={`Resume - ${selectedCandidate.name}`}
-                      />
+                      >
+                        {/* Fallback if browser can't embed */}
+                        <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-6">
+                          <FileText className="h-10 w-10 text-muted-foreground/30" />
+                          <p className="text-sm text-muted-foreground">Your browser can&apos;t preview this PDF inline.</p>
+                          <a
+                            href={selectedCandidate.resumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-electric-blue hover:underline"
+                          >
+                            Open resume →
+                          </a>
+                        </div>
+                      </object>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">

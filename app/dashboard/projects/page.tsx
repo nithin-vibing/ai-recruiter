@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
-import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { fetchProjects, fetchCandidates } from '@/lib/api-client';
 import { supabase } from '@/lib/supabase';
 import { useProject } from '@/lib/project-context';
 import { useAuth } from '@/lib/auth-context';
+import { toast } from 'sonner';
 
 interface ProjectWithCounts {
   id: string;
@@ -37,6 +39,7 @@ export default function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -83,6 +86,7 @@ export default function ProjectsPage() {
         setProjects(projectsWithCounts);
       } catch (error) {
         console.error('Failed to load projects:', error);
+        toast.error('Failed to load projects. Please refresh and try again.');
       } finally {
         setLoading(false);
       }
@@ -92,18 +96,23 @@ export default function ProjectsPage() {
   }, [user]);
 
   const handleViewResults = async (project: ProjectWithCounts) => {
-    // Store projectId and load candidates into context
-    sessionStorage.setItem('currentProjectId', project.id);
-    setProjectDetails({
-      name: project.project_name,
-      roleName: project.role_name,
-      jobDescription: '',
-    });
-
-    const candidates = await fetchCandidates(project.id);
-    setCandidates(candidates);
-    setCurrentStep(3);
-    router.push('/dashboard/project/results');
+    setLoadingProjectId(project.id);
+    try {
+      sessionStorage.setItem('currentProjectId', project.id);
+      setProjectDetails({
+        name: project.project_name,
+        roleName: project.role_name,
+        jobDescription: '',
+      });
+      const candidates = await fetchCandidates(project.id);
+      setCandidates(candidates);
+      setCurrentStep(3);
+      router.push('/dashboard/project/results');
+    } catch (error) {
+      console.error('Failed to load project:', error);
+      toast.error('Failed to load project results. Please try again.');
+      setLoadingProjectId(null);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -171,9 +180,15 @@ export default function ProjectsPage() {
             return (
               <Card
                 key={project.id}
-                className="group cursor-pointer transition-all hover:border-electric-blue/30 hover:shadow-md"
+                className={cn(
+                  'group transition-all',
+                  project.status === 'complete'
+                    ? 'cursor-pointer hover:border-electric-blue/30 hover:shadow-md'
+                    : 'cursor-default opacity-80',
+                  loadingProjectId === project.id && 'border-electric-blue/50 shadow-md'
+                )}
                 onClick={() => {
-                  if (project.status === 'complete') {
+                  if (project.status === 'complete' && !loadingProjectId) {
                     handleViewResults(project);
                   }
                 }}
@@ -184,7 +199,9 @@ export default function ProjectsPage() {
                       {status.label}
                     </Badge>
                     {project.status === 'complete' && (
-                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      loadingProjectId === project.id
+                        ? <Loader2 className="h-4 w-4 text-electric-blue animate-spin" />
+                        : <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
                   </div>
 
