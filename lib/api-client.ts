@@ -372,19 +372,16 @@ export async function logCandidateOverride(
 
 /**
  * Fetch all projects for the dashboard.
- * Filters by user_id if provided.
+ * userId is required — never return data across all users.
  */
-export async function fetchProjects(userId?: string) {
-  let query = supabase
+export async function fetchProjects(userId: string) {
+  if (!userId) throw new Error('fetchProjects requires a userId');
+
+  const { data, error } = await supabase
     .from('projects')
     .select('*')
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
-
-  if (userId) {
-    query = query.eq('user_id', userId);
-  }
-
-  const { data, error } = await query;
 
   if (error) throw new Error(`Failed to fetch projects: ${error.message}`);
   return data || [];

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const N8N_WEBHOOK_BASE = process.env.N8N_WEBHOOK_BASE_URL ?? 'https://ainkv.app.n8n.cloud/webhook';
+const N8N_WEBHOOK_BASE = 'https://ainkv.app.n8n.cloud/webhook';
 
 export async function POST(request: NextRequest) {
   try {

@@ -104,7 +104,7 @@ export default function CreateProjectPage() {
         roleName: currentProject?.roleName || '',
         jobDescription: currentProject?.jobDescription || '',
       });
-      sessionStorage.setItem('currentProjectId', projectId);
+      localStorage.setItem('currentProjectId', projectId);
     }
     setCurrentStep(2);
     router.push('/dashboard/project/upload');

@@ -65,7 +65,7 @@ export default function UploadResumesPage() {
   }, []);
 
   const handleStartScreening = async (files: File[], percentile: PercentileThreshold) => {
-    const projectId = sessionStorage.getItem('currentProjectId');
+    const projectId = localStorage.getItem('currentProjectId');
     if (!projectId) {
       setNoProject(true);
       return;

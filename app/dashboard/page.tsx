@@ -112,7 +112,7 @@ export default function DashboardPage() {
     if (project.status !== 'complete' || loadingProjectId) return;
     setLoadingProjectId(project.id);
     try {
-      sessionStorage.setItem('currentProjectId', project.id);
+      localStorage.setItem('currentProjectId', project.id);
       setProjectDetails({
         name: project.project_name,
         roleName: project.role_name,

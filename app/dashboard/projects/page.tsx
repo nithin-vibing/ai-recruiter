@@ -48,40 +48,39 @@ export default function ProjectsPage() {
       try {
         const rawProjects = await fetchProjects(user!.id);
 
-        // Fetch candidate counts for each project
-        const projectsWithCounts = await Promise.all(
-          rawProjects.map(async (p: Record<string, unknown>) => {
-            const { count } = await supabase
+        // Single query for all candidates across all projects — avoids N+1
+        const projectIds = rawProjects.map((p: Record<string, unknown>) => p.id as string);
+        const { data: allCandidates } = projectIds.length > 0
+          ? await supabase
               .from('candidates')
-              .select('*', { count: 'exact', head: true })
-              .eq('project_id', p.id);
+              .select('project_id, score, status')
+              .in('project_id', projectIds)
+          : { data: [] };
 
-            // Get top score and shortlisted count
-            const { data: candidates } = await supabase
-              .from('candidates')
-              .select('score, status')
-              .eq('project_id', p.id)
-              .order('score', { ascending: false })
-              .limit(1);
+        // Group candidate data by project in JS — O(n) not O(n * 3 queries)
+        const candidatesByProject = (allCandidates || []).reduce<
+          Record<string, { scores: number[]; shortlisted: number }>
+        >((acc, c) => {
+          if (!acc[c.project_id]) acc[c.project_id] = { scores: [], shortlisted: 0 };
+          acc[c.project_id].scores.push(Number(c.score));
+          if (c.status === 'shortlisted') acc[c.project_id].shortlisted++;
+          return acc;
+        }, {});
 
-            const { count: shortlisted } = await supabase
-              .from('candidates')
-              .select('*', { count: 'exact', head: true })
-              .eq('project_id', p.id)
-              .eq('status', 'shortlisted');
-
-            return {
-              id: p.id as string,
-              project_name: p.project_name as string,
-              role_name: p.role_name as string,
-              status: p.status as string,
-              created_at: p.created_at as string,
-              candidateCount: count || 0,
-              topScore: candidates?.[0]?.score || 0,
-              shortlistedCount: shortlisted || 0,
-            };
-          })
-        );
+        const projectsWithCounts = rawProjects.map((p: Record<string, unknown>) => {
+          const data = candidatesByProject[p.id as string] ?? { scores: [], shortlisted: 0 };
+          const topScore = data.scores.length > 0 ? Math.max(...data.scores) : 0;
+          return {
+            id: p.id as string,
+            project_name: p.project_name as string,
+            role_name: p.role_name as string,
+            status: p.status as string,
+            created_at: p.created_at as string,
+            candidateCount: data.scores.length,
+            topScore,
+            shortlistedCount: data.shortlisted,
+          };
+        });
 
         setProjects(projectsWithCounts);
       } catch (error) {
@@ -98,7 +97,7 @@ export default function ProjectsPage() {
   const handleViewResults = async (project: ProjectWithCounts) => {
     setLoadingProjectId(project.id);
     try {
-      sessionStorage.setItem('currentProjectId', project.id);
+      localStorage.setItem('currentProjectId', project.id);
       setProjectDetails({
         name: project.project_name,
         roleName: project.role_name,

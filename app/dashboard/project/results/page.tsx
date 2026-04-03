@@ -60,7 +60,7 @@ export default function ResultsPage() {
 
   const handleNewProject = () => {
     resetProject();
-    sessionStorage.removeItem('currentProjectId');
+    localStorage.removeItem('currentProjectId');
     router.push('/dashboard/project/create');
   };
 
