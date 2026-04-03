@@ -24,7 +24,7 @@
         "url": "https://thpfsrysnbvijfackpsg.supabase.co/rest/v1/projects",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
+        "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"project_name\": \"{{ $json.body.projectName }}\",\n  \"role_name\": \"{{ $json.body.roleName }}\",\n  \"job_description\": {{ JSON.stringify($json.body.jobDescription) }},\n  \"status\": \"rubric_review\"\n}\n",
@@ -69,7 +69,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        744,
+        752,
         224
       ],
       "id": "bfc1f428-616a-4f3a-aee2-c056e91c3d75",
@@ -117,7 +117,7 @@
         "url": "https://thpfsrysnbvijfackpsg.supabase.co/rest/v1/rubrics",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
+        "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.rubricItems) }}\n",
