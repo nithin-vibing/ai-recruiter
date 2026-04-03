@@ -31,15 +31,15 @@ export default function CreateProjectPage() {
   const [limitReached, setLimitReached] = useState(false);
   const [usageInfo, setUsageInfo] = useState<{ current: number; limit: number } | null>(null);
 
-  const handleGenerateRubric = async (data: { name: string; roleName: string; jobDescription: string }) => {
-    if (!user?.id) return;
+  const handleGenerateRubric = async (data: { name: string; roleName: string; jobDescription: string }): Promise<RubricCriterion[]> => {
+    if (!user?.id) return [];
 
     // Check free tier project limit
     const projectCheck = await canCreateProject(user.id);
     if (!projectCheck.allowed) {
       setLimitReached(true);
       setUsageInfo({ current: projectCheck.current, limit: projectCheck.limit });
-      return;
+      return [];
     }
 
     setIsGenerating(true);

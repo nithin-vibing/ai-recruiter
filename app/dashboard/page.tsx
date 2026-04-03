@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Upload, Users, FolderOpen, Loader2 } from 'lucide-react';
+import { Plus, FileText, Upload, Users, FolderOpen, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';

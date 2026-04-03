@@ -179,7 +179,7 @@ export default function UploadResumesPage() {
     startScreening(projectId, zipFile, (_current, total) => {
       if (total > 0 && totalFilesRef.current === 0) {
         totalFilesRef.current = total;
-        setScreeningProgress(prev => prev ? { ...prev, total } : { current: 0, total, isComplete: false });
+        setScreeningProgress({ current: screeningProgress?.current ?? 0, total, isComplete: false });
       }
     }).catch((error) => {
       console.log('Screening request completed or timed out:', error?.message || 'done');
