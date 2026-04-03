@@ -27,10 +27,15 @@ const PRO_FEATURES = [
   'Email support',
 ];
 
+// Placeholder until Stripe is integrated — swap this for a real plan lookup
+type UserPlan = 'free' | 'pro' | 'team';
+const getUserPlan = (): UserPlan => 'free';
+
 export default function PricingPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [usage, setUsage] = useState<{ projects_created: number; resumes_screened: number } | null>(null);
+  const userPlan = getUserPlan();
 
   useEffect(() => {
     if (user?.id) {
@@ -97,11 +102,11 @@ export default function PricingPage() {
       {/* Pricing cards */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Free tier */}
-        <Card className="border-2 border-muted relative">
+        <Card className={`border-2 relative ${userPlan === 'free' ? 'border-muted' : 'border-muted opacity-75'}`}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-xl">Free</CardTitle>
-              <Badge variant="secondary">Current Plan</Badge>
+              {userPlan === 'free' && <Badge variant="secondary">Current Plan</Badge>}
             </div>
             <div className="mt-4">
               <span className="text-4xl font-bold">$0</span>
@@ -133,10 +138,14 @@ export default function PricingPage() {
         {/* Pro tier */}
         <Card className="border-2 border-electric-blue relative">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-            <Badge className="bg-electric-blue text-white border-0 px-3">
-              <Zap className="h-3 w-3 mr-1" />
-              Recommended
-            </Badge>
+            {userPlan === 'pro' ? (
+              <Badge className="bg-success text-white border-0 px-3">Current Plan</Badge>
+            ) : (
+              <Badge className="bg-electric-blue text-white border-0 px-3">
+                <Zap className="h-3 w-3 mr-1" />
+                Recommended
+              </Badge>
+            )}
           </div>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -159,12 +168,20 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <Button
-              className="w-full mt-6 bg-electric-blue hover:bg-electric-blue/90"
-              onClick={() => alert('Stripe integration coming soon! Contact us for early access.')}
-            >
-              Upgrade to Pro
-            </Button>
+            {userPlan === 'pro' ? (
+              <Button className="w-full mt-6" variant="outline" disabled>
+                Current Plan
+              </Button>
+            ) : (
+              <Button
+                className="w-full mt-6 bg-electric-blue hover:bg-electric-blue/90"
+                asChild
+              >
+                <a href="mailto:nithin@shortlistai.com?subject=ShortlistAI Pro — Early Access&body=Hi, I'd like to upgrade to ShortlistAI Pro.">
+                  Get Early Access — $29/mo
+                </a>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -174,7 +191,7 @@ export default function PricingPage() {
         <p>No credit card required for the free plan. Cancel Pro anytime.</p>
         <p>
           Questions?{' '}
-          <a href="mailto:nithin@example.com" className="text-electric-blue hover:underline">
+          <a href="mailto:nithin@shortlistai.com" className="text-electric-blue hover:underline">
             Get in touch
           </a>
         </p>

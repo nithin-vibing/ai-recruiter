@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -75,6 +76,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError('Enter your email address above, then click "Forgot password?".');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    setMessage('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    });
+    setIsLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage('Password reset email sent — check your inbox.');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left panel - branding */}
@@ -83,8 +103,8 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <MugIcon size={48} />
             <span className="font-display text-3xl font-extrabold" style={{ letterSpacing: '-0.035em' }}>
-              <span className="text-white">AI</span>
-              <span className="text-electric-blue">Recruiter</span>
+              <span className="text-white">Shortlist</span>
+              <span className="text-electric-blue">AI</span>
             </span>
           </div>
           <div className="space-y-4">
@@ -120,8 +140,8 @@ export default function LoginPage() {
           <div className="lg:hidden flex items-center gap-3 justify-center mb-8">
             <MugIcon size={36} />
             <span className="font-display text-2xl font-extrabold" style={{ letterSpacing: '-0.035em' }}>
-              <span className="text-foreground">AI</span>
-              <span className="text-electric-blue">Recruiter</span>
+              <span className="text-foreground">Shortlist</span>
+              <span className="text-electric-blue">AI</span>
             </span>
           </div>
 
@@ -188,6 +208,17 @@ export default function LoginPage() {
                 minLength={6}
                 className="h-11"
               />
+              {!isSignUp && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-electric-blue transition-colors"
+                    onClick={handleForgotPassword}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {error && (

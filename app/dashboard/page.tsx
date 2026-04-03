@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowRight, FileText, Upload, Users, FolderOpen, Loader2 } from 'lucide-react';
+import { Plus, FileText, Upload, Users, FolderOpen, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
@@ -197,43 +197,33 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Card 2 — Upload Resumes (green) */}
-          <Link href="/dashboard/project/upload" className="group">
-            <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 transition-all duration-300 group-hover:-translate-y-[3px] group-hover:shadow-[0_8px_28px_rgba(0,0,0,0.07)] group-hover:border-electric-blue cursor-pointer overflow-hidden">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-success/10">
-                  <Upload className="h-[18px] w-[18px] text-success" />
-                </div>
-                <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Upload Resumes</h3>
-                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">2</span>
+          {/* Card 2 — Upload Resumes (green) — not directly navigable, part of sequence */}
+          <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 overflow-hidden opacity-75">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-success/10">
+                <Upload className="h-[18px] w-[18px] text-success" />
               </div>
-              <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
-                Upload a ZIP file.<br />AI scores each resume.
-              </p>
-              <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                Upload files <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
-              </div>
+              <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Upload Resumes</h3>
+              <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">2</span>
             </div>
-          </Link>
+            <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
+              Upload a ZIP file.<br />AI scores each resume.
+            </p>
+          </div>
 
-          {/* Card 3 — Review & Shortlist (amber) */}
-          <Link href="/dashboard/project/results" className="group">
-            <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 transition-all duration-300 group-hover:-translate-y-[3px] group-hover:shadow-[0_8px_28px_rgba(0,0,0,0.07)] group-hover:border-electric-blue cursor-pointer overflow-hidden">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-warning/10">
-                  <Users className="h-[18px] w-[18px] text-warning" />
-                </div>
-                <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Review & Shortlist</h3>
-                <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">3</span>
+          {/* Card 3 — Review & Shortlist (amber) — not directly navigable, part of sequence */}
+          <div className="rounded-[14px] border-2 border-transparent bg-card p-5 sm:p-[22px_24px_20px] flex flex-col gap-2.5 overflow-hidden opacity-75">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-warning/10">
+                <Users className="h-[18px] w-[18px] text-warning" />
               </div>
-              <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
-                Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
-              </p>
-              <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                View results <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
-              </div>
+              <h3 className="font-display text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Review & Shortlist</h3>
+              <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">3</span>
             </div>
-          </Link>
+            <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
+              Ranked results with scores and reasoning.<br />Shortlist, hold or reject.
+            </p>
+          </div>
         </div>
       </div>
 

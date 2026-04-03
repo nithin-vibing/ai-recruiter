@@ -17,7 +17,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'AI Recruiter',
+  title: 'ShortlistAI',
   description: 'Screen hundreds of resumes in minutes. AI scores every candidate against your custom rubric.',
   generator: 'v0.app',
   icons: {

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
-import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, FolderOpen, Users, Calendar, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchProjects, fetchCandidates } from '@/lib/api-client';
 import { supabase } from '@/lib/supabase';

@@ -197,19 +197,25 @@ export function ResultsTable({
 
       {/* ── Filters ── */}
       <div className="flex items-center gap-2">
-        {(['all', 'shortlisted', 'hold', 'rejected'] as FilterStatus[]).map((f) => (
+        {(['all', 'pending', 'shortlisted', 'hold', 'rejected'] as FilterStatus[]).map((f) => (
           <Button
             key={f}
             variant={filter === f ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(f)}
             className={cn(
+              filter === f && f === 'pending' && 'bg-muted-foreground hover:bg-muted-foreground/90',
               filter === f && f === 'shortlisted' && 'bg-success hover:bg-success/90',
               filter === f && f === 'hold' && 'bg-warning hover:bg-warning/90 text-foreground',
               filter === f && f === 'rejected' && 'bg-destructive hover:bg-destructive/90',
             )}
           >
             {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'pending' && statCounts.total > 0 && (
+              <span className="ml-1.5 text-xs opacity-70">
+                {candidates.filter(c => c.status === 'pending').length}
+              </span>
+            )}
           </Button>
         ))}
       </div>
@@ -369,23 +375,28 @@ export function ResultsTable({
                         return (
                           <div
                             key={s.criterionId}
-                            className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50 transition-colors cursor-default"
-                            title={s.evidence ? `"${s.evidence}"` : undefined}
+                            className="rounded-md px-1.5 py-1.5 hover:bg-muted/50 transition-colors"
                           >
-                            <span className="text-xs font-medium w-[130px] shrink-0 truncate">{s.criterionName}</span>
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
-                              <div
-                                className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
-                                style={{ width: `${ratio * 100}%` }}
-                              />
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium w-[130px] shrink-0 truncate">{s.criterionName}</span>
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
+                                <div
+                                  className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
+                                  style={{ width: `${ratio * 100}%` }}
+                                />
+                              </div>
+                              <span className={cn('text-xs tabular-nums font-semibold w-9 text-right shrink-0', getScoreColor(ratio * 100))}>
+                                {s.score}/{s.maxScore}
+                              </span>
                             </div>
-                            <span className={cn('text-xs tabular-nums font-semibold w-9 text-right shrink-0', getScoreColor(ratio * 100))}>
-                              {s.score}/{s.maxScore}
-                            </span>
+                            {s.evidence && (
+                              <p className="mt-0.5 ml-[138px] text-xs text-muted-foreground/70 italic leading-snug line-clamp-2">
+                                &ldquo;{s.evidence}&rdquo;
+                              </p>
+                            )}
                           </div>
                         );
                       })}
-                      <p className="text-xs text-muted-foreground/50 pt-1 pl-1.5">Hover a row to see evidence</p>
                     </div>
                   )}
                 </div>

@@ -9,6 +9,9 @@ import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScree
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Lock, ArrowLeft, Zap, ChevronLeft } from 'lucide-react';
 import type { PercentileThreshold } from '@/lib/types';
 
 /** Request browser notification permission — called once when screening starts. */
@@ -43,7 +46,11 @@ export default function UploadResumesPage() {
     (currentProject?.percentileThreshold as PercentileThreshold) || 25
   );
   const [isScreening, setIsScreening] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<{ current: number; limit: number } | null>(null);
+  const [noProject, setNoProject] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const totalFilesRef = useRef<number>(0);
 
   const handleThresholdChange = (newThreshold: PercentileThreshold) => {
     setThreshold(newThreshold);
@@ -60,7 +67,7 @@ export default function UploadResumesPage() {
   const handleStartScreening = async (files: File[], percentile: PercentileThreshold) => {
     const projectId = sessionStorage.getItem('currentProjectId');
     if (!projectId) {
-      alert('No project found. Please go back to Step 1 and create a project first.');
+      setNoProject(true);
       return;
     }
 
@@ -69,10 +76,8 @@ export default function UploadResumesPage() {
       try {
         const resumeCheck = await canScreenResumes(user.id, 0);
         if (resumeCheck.remaining <= 0) {
-          const upgrade = confirm(
-            `You've screened ${resumeCheck.current} of ${resumeCheck.limit} resumes this month (free tier).\n\nUpgrade to Pro for 500 resumes/month?\n\nClick OK to see pricing, or Cancel to go back.`
-          );
-          if (upgrade) router.push('/dashboard/pricing');
+          setLimitReached(true);
+          setLimitInfo({ current: resumeCheck.current, limit: resumeCheck.limit });
           return;
         }
       } catch (err) {
@@ -119,7 +124,7 @@ export default function UploadResumesPage() {
 
         setScreeningProgress({
           current: currentCount,
-          total: currentCount, // Update as we go
+          total: totalFilesRef.current || currentCount,
           isComplete: project?.status === 'complete',
         });
 
@@ -168,18 +173,19 @@ export default function UploadResumesPage() {
     }, 3000);
 
     // Fire the screening request — don't await it (it takes minutes)
-    // The API route may timeout, but n8n will keep processing
-    startScreening(projectId, zipFile).catch((error) => {
+    // The API route may timeout, but n8n will keep processing.
+    // onExtractionProgress fires during client-side PDF extraction and gives us
+    // the total file count so the progress bar has a real denominator.
+    startScreening(projectId, zipFile, (_current, total) => {
+      if (total > 0 && totalFilesRef.current === 0) {
+        totalFilesRef.current = total;
+        setScreeningProgress(prev => prev ? { ...prev, total } : { current: 0, total, isComplete: false });
+      }
+    }).catch((error) => {
       console.log('Screening request completed or timed out:', error?.message || 'done');
       // This is expected — Vercel functions timeout after 10-60s
       // n8n continues processing regardless
     });
-
-    // Increment resume count (we use file count from the ZIP)
-    // This runs after extraction, so we count the actual resumes processed
-    if (user?.id) {
-      // We'll count candidates when screening completes (in the polling loop)
-    }
   };
 
   return (
@@ -200,16 +206,78 @@ export default function UploadResumesPage() {
             </p>
           )}
         </div>
-        <StepIndicator currentStep={2} />
+        <div className="flex items-center gap-3">
+          {currentProject?.name && !isScreening && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => router.push('/dashboard/project/create')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Rubric
+            </Button>
+          )}
+          <StepIndicator currentStep={2} />
+        </div>
       </div>
 
-      {/* Content */}
-      <UploadResumes
-        onStartScreening={handleStartScreening}
-        screeningProgress={screeningProgress}
-        percentileThreshold={threshold}
-        onThresholdChange={handleThresholdChange}
-      />
+      {/* No project found — inline error card */}
+      {noProject && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="font-display text-lg font-bold text-foreground">No project found</p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              You need to create a project and approve a rubric before uploading resumes.
+            </p>
+            <Button
+              className="bg-electric-blue hover:bg-deep-blue"
+              onClick={() => router.push('/dashboard/project/create')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Step 1
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Resume limit reached — inline upgrade card */}
+      {limitReached && limitInfo && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="p-6 text-center space-y-3">
+            <Lock className="h-10 w-10 text-amber-500 mx-auto" />
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Monthly resume limit reached
+            </h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              You&apos;ve screened {limitInfo.current} of {limitInfo.limit} resumes this month on the free plan.
+              Upgrade to Pro for 500 resumes/month.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                Back to Dashboard
+              </Button>
+              <Button
+                className="bg-electric-blue hover:bg-electric-blue/90 gap-2"
+                onClick={() => router.push('/dashboard/pricing')}
+              >
+                <Zap className="h-4 w-4" />
+                Upgrade to Pro — $29/mo
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main upload UI — hidden when showing error states */}
+      {!noProject && !limitReached && (
+        <UploadResumes
+          onStartScreening={handleStartScreening}
+          screeningProgress={screeningProgress}
+          percentileThreshold={threshold}
+          onThresholdChange={handleThresholdChange}
+        />
+      )}
     </div>
   );
 }

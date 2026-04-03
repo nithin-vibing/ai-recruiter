@@ -221,15 +221,24 @@ export function UploadResumes({
               )}
               <div className="flex items-center justify-between">
                 <p className="font-display font-semibold text-foreground">Screening in progress</p>
-                <span className="text-sm font-medium text-electric-blue">
-                  {screeningProgress.current} scored
+                <span className="text-sm font-medium text-electric-blue tabular-nums">
+                  {screeningProgress.total > 0
+                    ? `${screeningProgress.current} of ${screeningProgress.total} scored`
+                    : `${screeningProgress.current} scored`}
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-electric-blue rounded-full animate-pulse" style={{ width: '100%', opacity: 0.6 }} />
+                {screeningProgress.total > 0 ? (
+                  <div
+                    className="h-full bg-electric-blue rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, (screeningProgress.current / screeningProgress.total) * 100)}%` }}
+                  />
+                ) : (
+                  <div className="h-full bg-electric-blue/60 rounded-full animate-pulse" style={{ width: '100%' }} />
+                )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {screeningProgress.current} candidates scored so far... Each resume is evaluated against your rubric by Claude AI.
+                Each resume is evaluated against your rubric by AI. This takes a few minutes — you&apos;ll be notified when done.
               </p>
             </div>
           </CardContent>
@@ -245,7 +254,7 @@ export function UploadResumes({
               <div>
                 <p className="font-display font-semibold text-foreground">Screening complete</p>
                 <p className="text-sm text-muted-foreground">
-                  All {screeningProgress?.total} resumes scored. View your ranked results.
+                  {screeningProgress?.current ?? 0} candidate{(screeningProgress?.current ?? 0) !== 1 ? 's' : ''} ranked and ready to review.
                 </p>
               </div>
             </div>

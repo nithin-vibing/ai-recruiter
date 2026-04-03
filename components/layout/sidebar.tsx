@@ -36,8 +36,8 @@ export function Sidebar() {
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
         <MugIcon size={28} />
         <span className="font-display text-xl font-extrabold" style={{ letterSpacing: '-0.035em' }}>
-          <span className="text-white">AI</span>
-          <span className="text-electric-blue">Recruiter</span>
+          <span className="text-white">Shortlist</span>
+          <span className="text-electric-blue">AI</span>
         </span>
       </div>
 

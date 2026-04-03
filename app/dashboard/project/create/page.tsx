@@ -6,7 +6,8 @@ import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { generateRubric, fetchRubric, claimProject, canCreateProject, incrementProjectCount } from '@/lib/api-client';
+import { generateRubric, claimProject, canCreateProject, incrementProjectCount } from '@/lib/api-client';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,14 +50,17 @@ export default function CreateProjectPage() {
 
       if (pid) {
         setProjectId(pid);
-        // Claim project for the logged-in user and increment usage
+        // Claim project first — only count usage if claim succeeds
         if (user?.id) {
-          claimProject(pid, user.id).catch((err) =>
-            console.error('Failed to claim project:', err)
-          );
-          incrementProjectCount(user.id).catch((err) =>
-            console.error('Failed to increment project count:', err)
-          );
+          try {
+            await claimProject(pid, user.id);
+            incrementProjectCount(user.id).catch((err) =>
+              console.warn('Failed to increment project count:', err)
+            );
+          } catch (err) {
+            console.error('Failed to claim project:', err);
+            toast.error('Project created but could not be linked to your account. Please refresh and try again.');
+          }
         }
       }
 
