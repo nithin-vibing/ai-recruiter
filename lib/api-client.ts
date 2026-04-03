@@ -234,7 +234,7 @@ export async function claimProject(projectId: string, userId: string) {
 // ─── Usage Tracking & Free Tier Limits ──────────────────────────────────────
 
 const FREE_TIER_LIMITS = {
-  maxProjects: 999, // TODO: reset to 3 before launch
+  maxProjects: 3,
   maxResumes: 100,
 };
 
