@@ -87,6 +87,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "specifyHeaders": "json",
         "jsonHeaders": "{\n  \"x-api-key\": \"YOUR_ANTHROPIC_API_KEY\",\n  \"anthropic-version\": \"2023-06-01\",\n  \"Content-Type\": \"application/json\"\n}\n",
@@ -102,7 +104,13 @@
         432
       ],
       "id": "3fae7694-a291-4c09-8fae-4cb2953beae8",
-      "name": "Score Resume"
+      "name": "Score Resume",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DPsL3ksDJdAjHpeo",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -121,6 +129,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://thpfsrysnbvijfackpsg.supabase.co/rest/v1/candidates",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "specifyHeaders": "json",
         "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
@@ -136,12 +146,20 @@
         512
       ],
       "id": "1541fbf9-ce41-4f72-9719-56c9a5cb133e",
-      "name": "Save Candidate to Supabase"
+      "name": "Save Candidate to Supabase",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DPsL3ksDJdAjHpeo",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "method": "PATCH",
         "url": "=https://thpfsrysnbvijfackpsg.supabase.co/rest/v1/projects?id=eq.{{ $('Webhook').first().json.body.projectId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "specifyHeaders": "json",
         "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
@@ -157,7 +175,13 @@
         240
       ],
       "id": "8018d99b-912b-4e7b-a8f0-bbb51f2907db",
-      "name": "Update Project Status to Complete"
+      "name": "Update Project Status to Complete",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DPsL3ksDJdAjHpeo",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -299,7 +323,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e077cd68-1701-4727-b570-1a08e384ae85",
+  "versionId": "f66ec0e6-2fb8-4c4e-bbc7-c80b66b446d1",
   "meta": {
     "instanceId": "773e3bef8f45334062fe7fb67a3c29322dab6b98f887d6e2ef8997d4577fd815"
   },
