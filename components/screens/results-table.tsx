@@ -270,14 +270,24 @@ export function ResultsTable({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-display text-xl font-bold">{selectedCandidate.name}</h3>
-                  <div className="flex items-center gap-3 mt-1.5">
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className={cn('text-2xl tabular-nums', getScoreColor(selectedCandidate.totalScore))}>
                       {selectedCandidate.totalScore}
                     </span>
                     <span className="text-sm text-muted-foreground">/ 100</span>
-                    <Badge variant="outline" className={cn('ml-2', statusColors[selectedCandidate.status])}>
+                    <Badge variant="outline" className={cn('ml-1', statusColors[selectedCandidate.status])}>
                       {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
                     </Badge>
+                    {selectedCandidate.confidence && (() => {
+                      const cfg = confidenceConfig[selectedCandidate.confidence!];
+                      const Icon = cfg.icon;
+                      return (
+                        <Badge variant="outline" className={cn('flex items-center gap-1 text-xs', cfg.className)}>
+                          <Icon className="h-3 w-3" />
+                          {cfg.label}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -331,56 +341,42 @@ export function ResultsTable({
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto p-4 min-h-0">
               {detailTab === 'reasoning' && (
-                <div className="space-y-4">
-                  {/* Confidence badge */}
-                  {selectedCandidate.confidence && (() => {
-                    const cfg = confidenceConfig[selectedCandidate.confidence!];
-                    const Icon = cfg.icon;
-                    return (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={cn('flex items-center gap-1.5 text-xs', cfg.className)}>
-                          <Icon className="h-3 w-3" />
-                          {cfg.label}
-                        </Badge>
-                      </div>
-                    );
-                  })()}
-
+                <div className="space-y-3">
                   {/* Summary */}
                   <p className="text-sm text-foreground leading-relaxed">
                     {selectedCandidate.reasoning || 'No summary available.'}
                   </p>
 
-                  {/* Criteria breakdown */}
+                  {/* Criteria breakdown — compact, evidence on hover */}
                   {selectedCandidate.scores.length > 0 && (
-                    <div className="space-y-3 pt-3 border-t">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <div className="space-y-1.5 pt-3 border-t">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                         Criteria Breakdown
                       </p>
                       {selectedCandidate.scores.map((s) => {
                         const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
                         return (
-                          <div key={s.criterionId} className="space-y-1.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-medium truncate">{s.criterionName}</span>
-                              <span className={cn('text-sm tabular-nums shrink-0 font-semibold', getScoreColor(ratio * 100))}>
-                                {s.score}/{s.maxScore}
-                              </span>
-                            </div>
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            key={s.criterionId}
+                            className="group flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50 transition-colors cursor-default"
+                            title={s.evidence ? `"${s.evidence}"` : undefined}
+                          >
+                            <span className="text-xs font-medium w-[140px] shrink-0 truncate">{s.criterionName}</span>
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
                               <div
-                                className={cn('h-full rounded-full transition-all', getCriterionBarColor(ratio))}
+                                className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
                                 style={{ width: `${ratio * 100}%` }}
                               />
                             </div>
-                            {s.evidence && (
-                              <p className="text-xs text-muted-foreground italic pl-2.5 border-l-2 border-muted leading-relaxed">
-                                &ldquo;{s.evidence}&rdquo;
-                              </p>
-                            )}
+                            <span className={cn('text-xs tabular-nums font-semibold w-9 text-right shrink-0', getScoreColor(ratio * 100))}>
+                              {s.score}/{s.maxScore}
+                            </span>
                           </div>
                         );
                       })}
+                      <p className="text-xs text-muted-foreground/60 pt-1 pl-2">
+                        Hover any row to see evidence
+                      </p>
                     </div>
                   )}
                 </div>
