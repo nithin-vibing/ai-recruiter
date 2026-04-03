@@ -74,10 +74,10 @@ function getCriterionBarColor(ratio: number): string {
   return 'bg-destructive';
 }
 
-const confidenceConfig = {
-  high:   { label: 'High Confidence',   icon: ShieldCheck, className: 'text-success border-success/30 bg-success/10' },
-  medium: { label: 'Medium Confidence', icon: Shield,      className: 'text-warning border-warning/30 bg-warning/10' },
-  low:    { label: 'Low Confidence',    icon: ShieldAlert, className: 'text-destructive border-destructive/30 bg-destructive/10' },
+// Only medium/low are shown — high confidence is the expected default, no badge needed
+const confidenceConfig: Record<string, { label: string; icon: typeof Shield; className: string }> = {
+  medium: { label: 'Review Carefully', icon: Shield,      className: 'text-warning border-warning/30 bg-warning/10' },
+  low:    { label: 'Low Evidence',     icon: ShieldAlert, className: 'text-destructive border-destructive/30 bg-destructive/10' },
 };
 
 export function ResultsTable({
@@ -215,7 +215,7 @@ export function ResultsTable({
       </div>
 
       {/* ── Master-Detail Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4" style={{ height: 'calc(100vh - 260px)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4" style={{ height: 'calc(100vh - 195px)' }}>
 
         {/* ── Left: Candidate list ── */}
         <Card className="overflow-hidden flex flex-col">
@@ -266,19 +266,19 @@ export function ResultsTable({
         {selectedCandidate ? (
           <Card className="overflow-hidden flex flex-col">
             {/* Header */}
-            <CardHeader className="p-4 pb-3 border-b shrink-0">
-              <div className="flex items-start justify-between gap-3">
+            <CardHeader className="p-3 pb-2 border-b shrink-0">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-display text-xl font-bold">{selectedCandidate.name}</h3>
-                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span className={cn('text-2xl tabular-nums', getScoreColor(selectedCandidate.totalScore))}>
+                  <h3 className="font-display text-lg font-bold leading-tight">{selectedCandidate.name}</h3>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className={cn('text-xl tabular-nums font-bold', getScoreColor(selectedCandidate.totalScore))}>
                       {selectedCandidate.totalScore}
                     </span>
-                    <span className="text-sm text-muted-foreground">/ 100</span>
-                    <Badge variant="outline" className={cn('ml-1', statusColors[selectedCandidate.status])}>
+                    <span className="text-xs text-muted-foreground">/ 100</span>
+                    <Badge variant="outline" className={cn(statusColors[selectedCandidate.status])}>
                       {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
                     </Badge>
-                    {selectedCandidate.confidence && (() => {
+                    {selectedCandidate.confidence && confidenceConfig[selectedCandidate.confidence] && (() => {
                       const cfg = confidenceConfig[selectedCandidate.confidence!];
                       const Icon = cfg.icon;
                       return (
@@ -314,7 +314,7 @@ export function ResultsTable({
             <div className="flex border-b px-4 shrink-0">
               <button
                 className={cn(
-                  'px-3 py-2 text-sm font-medium border-b-2 transition-colors',
+                  'px-3 py-1.5 text-sm font-medium border-b-2 transition-colors',
                   detailTab === 'reasoning'
                     ? 'border-electric-blue text-electric-blue'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -326,7 +326,7 @@ export function ResultsTable({
               </button>
               <button
                 className={cn(
-                  'px-3 py-2 text-sm font-medium border-b-2 transition-colors',
+                  'px-3 py-1.5 text-sm font-medium border-b-2 transition-colors',
                   detailTab === 'resume'
                     ? 'border-electric-blue text-electric-blue'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -339,7 +339,7 @@ export function ResultsTable({
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            <div className="flex-1 overflow-hidden p-3 min-h-0">
               {detailTab === 'reasoning' && (
                 <div className={cn(
                   'h-full',
@@ -347,8 +347,8 @@ export function ResultsTable({
                     ? 'grid grid-cols-[1fr_1px_1fr] gap-0'
                     : ''
                 )}>
-                  {/* Left: Summary */}
-                  <div className="pr-4">
+                  {/* Left: Summary — independently scrollable */}
+                  <div className="pr-4 h-full overflow-y-auto">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Summary</p>
                     <p className="text-sm text-foreground leading-relaxed">
                       {selectedCandidate.reasoning || 'No summary available.'}
@@ -360,9 +360,9 @@ export function ResultsTable({
                     <div className="bg-border mx-1" />
                   )}
 
-                  {/* Right: Criteria breakdown */}
+                  {/* Right: Criteria breakdown — independently scrollable */}
                   {selectedCandidate.scores.length > 0 && (
-                    <div className="pl-4 space-y-1">
+                    <div className="pl-4 h-full overflow-y-auto space-y-1">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Criteria Breakdown</p>
                       {selectedCandidate.scores.map((s) => {
                         const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
@@ -422,7 +422,7 @@ export function ResultsTable({
             </div>
 
             {/* Bottom: Status + Comments + Navigation */}
-            <div className="border-t px-4 py-3 space-y-2 shrink-0">
+            <div className="border-t px-4 py-2 space-y-1.5 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-muted-foreground">Status</span>
