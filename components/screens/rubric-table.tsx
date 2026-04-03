@@ -24,6 +24,24 @@ interface RubricTableProps {
   onApprove: () => void;
 }
 
+// Largest remainder method: guarantees displayed integer percentages always sum to exactly 100
+function getDisplayWeights(rubric: RubricCriterion[]): number[] {
+  const rawPercentages = rubric.map(c => c.weight * 100);
+  const floors = rawPercentages.map(p => Math.floor(p));
+  const remainders = rawPercentages.map((p, i) => p - floors[i]);
+  const totalFloor = floors.reduce((a, b) => a + b, 0);
+  const diff = 100 - totalFloor;
+  const sortedIndices = remainders
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => b.r - a.r)
+    .map(x => x.i);
+  const result = [...floors];
+  for (let i = 0; i < diff && i < sortedIndices.length; i++) {
+    result[sortedIndices[i]]++;
+  }
+  return result;
+}
+
 export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
 
@@ -31,10 +49,11 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove 
     setLocalRubric(rubric);
   }, [rubric]);
 
-  // Weight is stored internally as decimal (0.2) but displayed as percentage (20)
-  const weightSumDecimal = localRubric.reduce((sum, c) => sum + c.weight, 0);
-  const weightSumPercent = Math.round(weightSumDecimal * 100);
-  const isWeightValid = Math.abs(weightSumPercent - 100) <= 1;
+  // Weight is stored as decimal (0.2), displayed as integer percentage (20)
+  // Use largest remainder method to ensure displayed values always sum to exactly 100
+  const displayWeights = getDisplayWeights(localRubric);
+  const weightSumPercent = displayWeights.reduce((a, b) => a + b, 0);
+  const isWeightValid = weightSumPercent === 100;
 
   const updateCriterion = (id: string, field: keyof RubricCriterion, value: string | number) => {
     const updated = localRubric.map(c =>
@@ -110,52 +129,56 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove 
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-[200px]">Criterion</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-[100px] text-center">Max Score</TableHead>
-                <TableHead className="w-[120px] text-center">Weight %</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
+                <TableHead className="w-[180px] min-w-[180px]">Criterion</TableHead>
+                <TableHead className="min-w-[260px]">Description</TableHead>
+                <TableHead className="w-[90px] min-w-[90px] text-center">Max Score</TableHead>
+                <TableHead className="w-[100px] min-w-[100px] text-center">Weight %</TableHead>
+                <TableHead className="w-[48px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {localRubric.map((criterion) => (
-                <TableRow key={criterion.id}>
-                  <TableCell>
+              {localRubric.map((criterion, index) => (
+                <TableRow key={criterion.id} className="h-14">
+                  <TableCell className="py-2">
                     <Input
                       value={criterion.name}
+                      maxLength={25}
+                      title={criterion.name}
                       onChange={(e) => updateCriterion(criterion.id, 'name', e.target.value)}
-                      className="h-8"
+                      className="h-9 text-sm truncate"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Input
                       value={criterion.description}
+                      maxLength={100}
+                      title={criterion.description}
                       onChange={(e) => updateCriterion(criterion.id, 'description', e.target.value)}
-                      className="h-8"
+                      className="h-9 text-sm"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Input
                       type="number"
                       min={1}
                       max={100}
                       value={criterion.maxScore}
                       onChange={(e) => updateCriterion(criterion.id, 'maxScore', parseInt(e.target.value) || 0)}
-                      className="h-8 text-center"
+                      className="h-9 text-center text-sm"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Input
                       type="number"
                       min={0}
                       max={100}
                       step={5}
-                      value={Math.round(criterion.weight * 100)}
+                      value={displayWeights[index]}
                       onChange={(e) => updateWeight(criterion.id, parseFloat(e.target.value) || 0)}
-                      className="h-8 text-center"
+                      className="h-9 text-center text-sm"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Button
                       variant="ghost"
                       size="icon-sm"
