@@ -8,7 +8,24 @@ import { useProject } from '@/lib/project-context';
 import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScreenResumes, incrementResumeCount } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import type { PercentileThreshold } from '@/lib/types';
+
+/** Request browser notification permission — called once when screening starts. */
+async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+/** Fire a browser push notification (works even when tab is in background). */
+function sendBrowserNotification(title: string, body: string) {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/icon.svg' });
+  }
+}
 
 export default function UploadResumesPage() {
   const router = useRouter();
@@ -66,6 +83,9 @@ export default function UploadResumesPage() {
     setPercentileThreshold(percentile);
     setIsScreening(true);
 
+    // Ask for browser notification permission now (requires user gesture)
+    requestNotificationPermission();
+
     const zipFile = files[0];
 
     // Set initial progress
@@ -111,6 +131,17 @@ export default function UploadResumesPage() {
           // Fetch all candidates
           const candidates = await fetchCandidates(projectId);
           setCandidates(candidates);
+
+          // Notify — browser push if tab is backgrounded, toast always
+          const candidateCount = candidates.length;
+          toast.success(`Screening complete! ${candidateCount} candidate${candidateCount !== 1 ? 's' : ''} ranked.`, {
+            duration: 5000,
+            action: { label: 'View Results', onClick: () => router.push('/dashboard/project/results') },
+          });
+          sendBrowserNotification(
+            'Screening complete ✓',
+            `${candidateCount} candidate${candidateCount !== 1 ? 's' : ''} have been scored and ranked.`
+          );
 
           // Track resume usage
           if (user?.id && candidates.length > 0) {
