@@ -341,27 +341,38 @@ export function ResultsTable({
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto p-4 min-h-0">
               {detailTab === 'reasoning' && (
-                <div className="space-y-3">
-                  {/* Summary */}
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {selectedCandidate.reasoning || 'No summary available.'}
-                  </p>
+                <div className={cn(
+                  'h-full',
+                  selectedCandidate.scores.length > 0
+                    ? 'grid grid-cols-[1fr_1px_1fr] gap-0'
+                    : ''
+                )}>
+                  {/* Left: Summary */}
+                  <div className="pr-4">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Summary</p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {selectedCandidate.reasoning || 'No summary available.'}
+                    </p>
+                  </div>
 
-                  {/* Criteria breakdown — compact, evidence on hover */}
+                  {/* Divider */}
                   {selectedCandidate.scores.length > 0 && (
-                    <div className="space-y-1.5 pt-3 border-t">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                        Criteria Breakdown
-                      </p>
+                    <div className="bg-border mx-1" />
+                  )}
+
+                  {/* Right: Criteria breakdown */}
+                  {selectedCandidate.scores.length > 0 && (
+                    <div className="pl-4 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Criteria Breakdown</p>
                       {selectedCandidate.scores.map((s) => {
                         const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
                         return (
                           <div
                             key={s.criterionId}
-                            className="group flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50 transition-colors cursor-default"
+                            className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50 transition-colors cursor-default"
                             title={s.evidence ? `"${s.evidence}"` : undefined}
                           >
-                            <span className="text-xs font-medium w-[140px] shrink-0 truncate">{s.criterionName}</span>
+                            <span className="text-xs font-medium w-[130px] shrink-0 truncate">{s.criterionName}</span>
                             <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
                               <div
                                 className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
@@ -374,9 +385,7 @@ export function ResultsTable({
                           </div>
                         );
                       })}
-                      <p className="text-xs text-muted-foreground/60 pt-1 pl-2">
-                        Hover any row to see evidence
-                      </p>
+                      <p className="text-xs text-muted-foreground/50 pt-1 pl-1.5">Hover a row to see evidence</p>
                     </div>
                   )}
                 </div>
