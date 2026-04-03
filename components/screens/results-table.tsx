@@ -23,6 +23,9 @@ import {
   FileText,
   ExternalLink,
   MessageSquare,
+  ShieldCheck,
+  ShieldAlert,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Candidate, CandidateStatus, FilterStatus } from '@/lib/types';
@@ -63,6 +66,19 @@ function getScoreBg(score: number): string {
   if (score >= 45) return 'bg-warning/10';
   return 'bg-destructive/10';
 }
+
+function getCriterionBarColor(ratio: number): string {
+  if (ratio >= 0.75) return 'bg-success';
+  if (ratio >= 0.55) return 'bg-electric-blue';
+  if (ratio >= 0.35) return 'bg-warning';
+  return 'bg-destructive';
+}
+
+const confidenceConfig = {
+  high:   { label: 'High Confidence',   icon: ShieldCheck, className: 'text-success border-success/30 bg-success/10' },
+  medium: { label: 'Medium Confidence', icon: Shield,      className: 'text-warning border-warning/30 bg-warning/10' },
+  low:    { label: 'Low Confidence',    icon: ShieldAlert, className: 'text-destructive border-destructive/30 bg-destructive/10' },
+};
 
 export function ResultsTable({
   candidates,
@@ -315,9 +331,59 @@ export function ResultsTable({
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto p-4 min-h-0">
               {detailTab === 'reasoning' && (
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {selectedCandidate.reasoning || 'No reasoning available.'}
-                </p>
+                <div className="space-y-4">
+                  {/* Confidence badge */}
+                  {selectedCandidate.confidence && (() => {
+                    const cfg = confidenceConfig[selectedCandidate.confidence!];
+                    const Icon = cfg.icon;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={cn('flex items-center gap-1.5 text-xs', cfg.className)}>
+                          <Icon className="h-3 w-3" />
+                          {cfg.label}
+                        </Badge>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Summary */}
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {selectedCandidate.reasoning || 'No summary available.'}
+                  </p>
+
+                  {/* Criteria breakdown */}
+                  {selectedCandidate.scores.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Criteria Breakdown
+                      </p>
+                      {selectedCandidate.scores.map((s) => {
+                        const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
+                        return (
+                          <div key={s.criterionId} className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium truncate">{s.criterionName}</span>
+                              <span className={cn('text-sm tabular-nums shrink-0 font-semibold', getScoreColor(ratio * 100))}>
+                                {s.score}/{s.maxScore}
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={cn('h-full rounded-full transition-all', getCriterionBarColor(ratio))}
+                                style={{ width: `${ratio * 100}%` }}
+                              />
+                            </div>
+                            {s.evidence && (
+                              <p className="text-xs text-muted-foreground italic pl-2.5 border-l-2 border-muted leading-relaxed">
+                                &ldquo;{s.evidence}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
               {detailTab === 'resume' && (
                 <div className="h-full flex flex-col">

@@ -27,6 +27,8 @@ export interface CandidateScore {
   criterionName: string;
   score: number;
   maxScore: number;
+  weight: number;
+  evidence: string;
 }
 
 export interface Candidate {
@@ -42,6 +44,7 @@ export interface Candidate {
   reasoning: string;
   status: CandidateStatus;
   comments: string;
+  confidence?: 'high' | 'medium' | 'low';
   resumeUrl?: string;
 }
 
