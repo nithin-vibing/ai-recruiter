@@ -35,7 +35,19 @@ export async function POST(request: NextRequest) {
       throw new Error(`n8n webhook failed: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      throw new Error('n8n returned an empty response — workflow may have timed out or failed before responding');
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('n8n response was not valid JSON:', text.slice(0, 500));
+      throw new Error(`n8n returned non-JSON response: ${text.slice(0, 200)}`);
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error generating rubric:', error);
