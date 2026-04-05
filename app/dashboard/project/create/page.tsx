@@ -134,7 +134,7 @@ export default function CreateProjectPage() {
               Free Tier Limit Reached
             </h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              You&apos;ve created {usageInfo.current} of {usageInfo.limit} projects this month on the free plan.
+              You&apos;ve created {usageInfo.current} of 3 projects this month on the free plan.
               Upgrade to Pro for unlimited projects and 500 resumes/month.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
