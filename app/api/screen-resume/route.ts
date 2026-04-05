@@ -27,10 +27,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`Received ZIP: ${zipFile.name}, size: ${zipFile.size}, projectId: ${projectId}`);
 
+    // Fetch the rubric for this project from Supabase
+    const { data: rubricRows, error: rubricError } = await supabase
+      .from('rubrics')
+      .select('criterion, description, max_score, weight')
+      .eq('project_id', projectId)
+      .order('sort_order');
+
+    if (rubricError) {
+      console.error('Failed to fetch rubric:', rubricError);
+      throw new Error(`Failed to fetch rubric: ${rubricError.message}`);
+    }
+
     // Forward the text ZIP directly to n8n
     // PDF→text conversion already happened in the browser
     const n8nFormData = new FormData();
     n8nFormData.append('projectId', projectId);
+    n8nFormData.append('rubric', JSON.stringify(rubricRows));
     n8nFormData.append('resumesZip', zipFile, 'resumes.zip');
 
     console.log('Forwarding to n8n...');
