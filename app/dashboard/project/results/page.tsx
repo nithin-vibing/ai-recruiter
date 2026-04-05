@@ -35,17 +35,20 @@ export default function ResultsPage() {
   const [isRescoring, setIsRescoring] = useState(false);
   const [rescoreError, setRescoreError] = useState<string | null>(null);
 
-  // Load rubric when editor opens
+  // Load rubric when editor opens — use localStorage ID (actual Supabase project ID)
   useEffect(() => {
-    if (showRubricEditor && currentProject?.id) {
-      fetchRubricCriteria(currentProject.id)
-        .then(criteria => {
-          setRubric(criteria);
-          setOriginalRubric(criteria);
-        })
-        .catch(err => console.error('Failed to load rubric:', err));
+    if (showRubricEditor) {
+      const projectId = localStorage.getItem('currentProjectId');
+      if (projectId) {
+        fetchRubricCriteria(projectId)
+          .then(criteria => {
+            setRubric(criteria);
+            setOriginalRubric(criteria);
+          })
+          .catch(err => console.error('Failed to load rubric:', err));
+      }
     }
-  }, [showRubricEditor, currentProject?.id]);
+  }, [showRubricEditor]);
 
   const handleStatusChange = async (candidateId: string, status: CandidateStatus) => {
     const candidate = candidates.find(c => c.id === candidateId);
@@ -78,13 +81,13 @@ export default function ResultsPage() {
   };
 
   const handleRerank = async () => {
-    if (!currentProject?.id) return;
+    const projectId = localStorage.getItem('currentProjectId');
+    if (!projectId) return;
     setIsRescoring(true);
     setRescoreError(null);
     try {
-      await rescoreProject(currentProject.id, rubric);
-      // Refresh candidates with new scores
-      const updated = await fetchCandidates(currentProject.id);
+      await rescoreProject(projectId, rubric);
+      const updated = await fetchCandidates(projectId);
       setCandidates(updated);
       setShowRubricEditor(false);
     } catch (err) {
