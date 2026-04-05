@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, CheckCircle, RotateCcw, Loader2 } from 'lucide-react';
 import type { RubricCriterion } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,8 @@ interface RubricTableProps {
   originalRubric?: RubricCriterion[];
   onRubricChange: (rubric: RubricCriterion[]) => void;
   onApprove: () => void;
+  approveLabel?: string;
+  isLoading?: boolean;
 }
 
 // Largest remainder method: guarantees displayed integer percentages always sum to exactly 100
@@ -42,7 +44,7 @@ function getDisplayWeights(rubric: RubricCriterion[]): number[] {
   return result;
 }
 
-export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove }: RubricTableProps) {
+export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve Rubric & Continue', isLoading = false }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
 
   useEffect(() => {
@@ -211,10 +213,11 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove 
 
           <Button
             className="bg-electric-blue hover:bg-deep-blue"
-            disabled={!isWeightValid}
+            disabled={!isWeightValid || isLoading}
             onClick={onApprove}
           >
-            Approve Rubric & Continue
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {approveLabel}
           </Button>
         </div>
 

@@ -400,3 +400,34 @@ export async function fetchRubric(projectId: string) {
   if (error) throw new Error(`Failed to fetch rubric: ${error.message}`);
   return data || [];
 }
+
+/**
+ * Fetch rubric and map to RubricCriterion[] for the editor.
+ * Uses Supabase row IDs so edits can be saved back by ID.
+ */
+export async function fetchRubricCriteria(projectId: string): Promise<import('./types').RubricCriterion[]> {
+  const rows = await fetchRubric(projectId);
+  return rows.map(row => ({
+    id: row.id,
+    name: row.criterion,
+    description: row.description,
+    maxScore: row.max_score || 10,
+    weight: row.weight || 0.2,
+  }));
+}
+
+/**
+ * Re-score all candidates for a project using an updated rubric.
+ * Saves new rubric weights to Supabase, then calls Claude for each candidate.
+ */
+export async function rescoreProject(projectId: string, rubric: import('./types').RubricCriterion[]) {
+  const response = await fetch('/api/rescore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectId, rubric }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to rescore candidates');
+  return data;
+}
