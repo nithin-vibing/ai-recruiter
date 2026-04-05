@@ -407,13 +407,24 @@ export async function fetchRubric(projectId: string) {
  */
 export async function fetchRubricCriteria(projectId: string): Promise<import('./types').RubricCriterion[]> {
   const rows = await fetchRubric(projectId);
-  return rows.map(row => ({
+  const criteria = rows.map(row => ({
     id: row.id,
     name: row.criterion,
     description: row.description,
     maxScore: row.max_score || 10,
     weight: row.weight || 0.2,
   }));
+
+  // Normalize weights so they always sum to exactly 1.0
+  const total = criteria.reduce((sum, c) => sum + c.weight, 0);
+  if (total > 0 && Math.abs(total - 1.0) > 0.001) {
+    criteria.forEach(c => { c.weight = parseFloat((c.weight / total).toFixed(4)); });
+    // Fix any rounding remainder on the last item
+    const newTotal = criteria.reduce((sum, c) => sum + c.weight, 0);
+    criteria[criteria.length - 1].weight = parseFloat((criteria[criteria.length - 1].weight + (1.0 - newTotal)).toFixed(4));
+  }
+
+  return criteria;
 }
 
 /**
