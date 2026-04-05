@@ -46,9 +46,12 @@ function getDisplayWeights(rubric: RubricCriterion[]): number[] {
 
 export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve Rubric & Continue', isLoading = false }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
+  // Raw string values while user is mid-edit — avoids LRM recompute fighting the keyboard
+  const [weightInputValues, setWeightInputValues] = useState<{ [id: string]: string }>({});
 
   useEffect(() => {
     setLocalRubric(rubric);
+    setWeightInputValues({}); // clear any in-progress edits on external rubric change (e.g. reset)
   }, [rubric]);
 
   // Weight is stored as decimal (0.2), displayed as integer percentage (20)
@@ -174,9 +177,24 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove,
                       type="number"
                       min={0}
                       max={100}
-                      step={5}
-                      value={displayWeights[index]}
-                      onChange={(e) => updateWeight(criterion.id, parseFloat(e.target.value) || 0)}
+                      step={1}
+                      value={weightInputValues[criterion.id] ?? String(displayWeights[index])}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setWeightInputValues(prev => ({ ...prev, [criterion.id]: raw }));
+                        const parsed = parseFloat(raw);
+                        if (!isNaN(parsed)) {
+                          updateWeight(criterion.id, parsed);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Snap back to LRM-computed value on blur so display is always consistent
+                        setWeightInputValues(prev => {
+                          const next = { ...prev };
+                          delete next[criterion.id];
+                          return next;
+                        });
+                      }}
                       className="h-9 text-center text-sm"
                     />
                   </TableCell>
