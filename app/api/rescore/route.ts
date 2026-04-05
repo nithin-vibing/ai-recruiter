@@ -110,9 +110,10 @@ Respond ONLY with this exact JSON:
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const parsed = JSON.parse(text);
 
-      // Fallback: compute total_score from criteria_scores if missing
-      let totalScore = parsed.total_score || 0;
-      if (!totalScore && parsed.criteria_scores?.length) {
+      // Always compute total_score ourselves — never trust Claude's calculation
+      // Formula: sum of (score / max_score × weight × 100) for all criteria
+      let totalScore = 0;
+      if (parsed.criteria_scores?.length) {
         totalScore = parsed.criteria_scores.reduce(
           (sum: number, c: { score: number; max_score: number; weight: number }) =>
             sum + (c.max_score > 0 ? (c.score / c.max_score) * c.weight * 100 : 0),
