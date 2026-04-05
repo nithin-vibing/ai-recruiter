@@ -37,7 +37,7 @@ export default function ResultsPage() {
 
   // Load rubric when editor opens
   useEffect(() => {
-    if (showRubricEditor && currentProject?.id && rubric.length === 0) {
+    if (showRubricEditor && currentProject?.id) {
       fetchRubricCriteria(currentProject.id)
         .then(criteria => {
           setRubric(criteria);
@@ -45,7 +45,7 @@ export default function ResultsPage() {
         })
         .catch(err => console.error('Failed to load rubric:', err));
     }
-  }, [showRubricEditor, currentProject?.id, rubric.length]);
+  }, [showRubricEditor, currentProject?.id]);
 
   const handleStatusChange = async (candidateId: string, status: CandidateStatus) => {
     const candidate = candidates.find(c => c.id === candidateId);
