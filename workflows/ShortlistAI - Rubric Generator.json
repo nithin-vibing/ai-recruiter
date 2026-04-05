@@ -26,7 +26,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"project_name\": \"{{ $json.body.projectName }}\",\n  \"role_name\": \"{{ $json.body.roleName }}\",\n  \"job_description\": {{ JSON.stringify($json.body.jobDescription) }},\n  \"status\": \"rubric_review\"\n}\n",
@@ -62,58 +62,41 @@
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "builtInTools": {},
-        "options": {
-          "maxTokens": 2500,
-          "temperature": 0.2
-        }
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"x-api-key\": \"YOUR_ANTHROPIC_API_KEY\",\n  \"anthropic-version\": \"2023-06-01\",\n  \"Content-Type\": \"application/json\"\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2500, system: $json.systemPrompt, messages: [{ role: 'user', content: $json.userPrompt }] }) }}",
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        752,
-        224
-      ],
-      "id": "bfc1f428-616a-4f3a-aee2-c056e91c3d75",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "1yJZhPJpRqCjoUNq",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.userPrompt }}\n",
-        "options": {
-          "systemMessage": "={{ $json.systemPrompt }}"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
       "position": [
         672,
         0
       ],
       "id": "17798e58-f618-404f-ba92-dd354da6c268",
-      "name": "Generate Rubric via AI"
+      "name": "Generate Rubric via Claude",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DPsL3ksDJdAjHpeo",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst projectId = $('Generate Rubric Prompt').first().json.projectId;\n\nlet rubricText = input.output || input.text || '';\nrubricText = rubricText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet rubricItems = [];\ntry {\n  rubricItems = JSON.parse(rubricText);\n} catch (e) {\n  return [{\n    json: {\n      error: 'Failed to parse rubric JSON',\n      raw: rubricText,\n      projectId\n    }\n  }];\n}\n\n// Normalize weights so they always sum to exactly 1.0\nconst totalWeight = rubricItems.reduce((sum, r) => sum + (r.weight || 0), 0);\nconst multiplier = totalWeight > 0 ? 1 / totalWeight : 1 / rubricItems.length;\n\nconst supabaseRows = rubricItems.map((item, index) => ({\n  project_id: projectId,\n  criterion: item.criterion,\n  description: item.description,\n  max_score: item.max_score || 10,\n  weight: parseFloat(((item.weight || (1 / rubricItems.length)) * multiplier).toFixed(4)),\n  scoring_guide: item.scoring_guide || null,\n  sort_order: index\n}));\n\nreturn [{\n  json: {\n    projectId,\n    rubricItems: supabaseRows,\n    rubricForFrontend: supabaseRows\n  }\n}];\n"
+        "jsCode": "const input = $input.first().json;\nconst projectId = $('Generate Rubric Prompt').first().json.projectId;\n\n// Handle Claude's response format: content[0].text\nlet rubricText = (input.content && Array.isArray(input.content) && input.content[0]?.text) || input.output || input.text || '';\nrubricText = rubricText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet rubricItems = [];\ntry {\n  rubricItems = JSON.parse(rubricText);\n} catch (e) {\n  return [{\n    json: {\n      error: 'Failed to parse rubric JSON',\n      raw: rubricText,\n      projectId\n    }\n  }];\n}\n\n// Normalize weights so they always sum to exactly 1.0\nconst totalWeight = rubricItems.reduce((sum, r) => sum + (r.weight || 0), 0);\nconst multiplier = totalWeight > 0 ? 1 / totalWeight : 1 / rubricItems.length;\n\nconst supabaseRows = rubricItems.map((item, index) => ({\n  project_id: projectId,\n  criterion: item.criterion,\n  description: item.description,\n  max_score: item.max_score || 10,\n  weight: parseFloat(((item.weight || (1 / rubricItems.length)) * multiplier).toFixed(4)),\n  scoring_guide: item.scoring_guide || null,\n  sort_order: index\n}));\n\nreturn [{\n  json: {\n    projectId,\n    rubricItems: supabaseRows,\n    rubricForFrontend: supabaseRows\n  }\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
+        896,
         0
       ],
       "id": "2bed61cc-465a-43e7-8071-4b1dd1b05e4f",
@@ -127,7 +110,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"apikey\": \"YOUR_SUPABASE_ANON_KEY\",\n  \"Authorization\": \"Bearer YOUR_SUPABASE_ANON_KEY\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocGZzcnlzbmJ2aWpmYWNrcHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzY0MTUsImV4cCI6MjA5MDI1MjQxNX0.ngZ670FgCd4LctvtOBd2CF87rl6oMA08hBTKv_eovwQ\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}\n",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.rubricItems) }}\n",
@@ -136,7 +119,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1248,
+        1120,
         0
       ],
       "id": "a86b9f04-df03-41ae-ac1c-d26c6337783c",
@@ -156,7 +139,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1472,
+        1344,
         0
       ],
       "id": "e6f84dcd-ed1a-4c6b-841b-af161687f3d6",
@@ -191,25 +174,14 @@
       "main": [
         [
           {
-            "node": "Generate Rubric via AI",
+            "node": "Generate Rubric via Claude",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Generate Rubric via AI",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Rubric via AI": {
+    "Generate Rubric via Claude": {
       "main": [
         [
           {
