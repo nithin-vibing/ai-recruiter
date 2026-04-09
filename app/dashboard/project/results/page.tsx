@@ -109,14 +109,14 @@ export default function ResultsPage() {
         <div className="text-center">
           <h2 className="font-display text-xl font-semibold">No Results Yet</h2>
           <p className="mt-2 text-muted-foreground">
-            Start a new role to screen candidates
+            Start a new project to screen candidates
           </p>
           <Button
             className="mt-4 bg-electric-blue hover:bg-deep-blue"
             onClick={handleNewProject}
           >
             <Plus className="h-4 w-4" />
-            New Role
+            New Project
           </Button>
         </div>
       </div>

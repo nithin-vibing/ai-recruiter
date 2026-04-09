@@ -170,7 +170,7 @@ export default function DashboardPage() {
         >
           <Link href="/dashboard/project/create">
             <Plus className="h-4 w-4" />
-            New Role
+            New Project
           </Link>
         </Button>
       </div>
@@ -268,7 +268,7 @@ export default function DashboardPage() {
             <div className="flex items-baseline gap-5">
               <div className="flex items-baseline gap-1.5">
                 <span className="font-display text-xl font-bold text-foreground">{stats.projects}</span>
-                <span className="text-[0.78rem] text-muted-foreground">roles</span>
+                <span className="text-[0.78rem] text-muted-foreground">projects</span>
               </div>
               <div className="w-px h-[18px] bg-border self-center" />
               <div className="flex items-baseline gap-1.5">
@@ -287,7 +287,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
-                Past Roles
+                Past Projects
               </h2>
               <Link href="/dashboard/projects" className="text-[0.78rem] font-semibold text-electric-blue hover:opacity-70 transition-opacity">
                 All →

@@ -82,7 +82,7 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, in
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-display text-xl font-bold">Role Details</CardTitle>
+        <CardTitle className="font-display text-xl font-bold">Project Details</CardTitle>
         <CardDescription>
           Paste the role info and job description. AI will generate a custom scoring rubric in seconds.
         </CardDescription>
@@ -90,7 +90,7 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, in
       <CardContent>
         <FieldGroup className="space-y-4">
           <Field>
-            <FieldLabel htmlFor="project-name">Role Name</FieldLabel>
+            <FieldLabel htmlFor="project-name">Project Name</FieldLabel>
             <Input
               id="project-name"
               placeholder="e.g., Q2 Engineering Hiring"
