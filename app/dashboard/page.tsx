@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Upload, Users, FolderOpen, Loader2, ArrowRight } from 'lucide-react';
+import { Plus, FileText, Upload, Users, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { fetchCandidates } from '@/lib/api-client';
 import { useProject } from '@/lib/project-context';
@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ projects: 0, candidates: 0, avgTopScore: 0 });
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null);
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -102,6 +103,8 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Failed to load dashboard:', error);
         toast.error('Failed to load dashboard data.');
+      } finally {
+        setDashboardLoaded(true);
       }
     }
 
@@ -230,44 +233,68 @@ export default function DashboardPage() {
       {/* ── Spacer — pushes bottom section down ── */}
       <div />
 
-      {/* ── Bottom: Quick Stats + Past Projects ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 self-end pt-5 border-t border-border">
-        {/* Quick Stats */}
-        <div className="flex flex-col gap-2">
-          <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
-            Quick Stats
-          </h2>
-          <div className="flex items-baseline gap-5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-display text-xl font-bold text-foreground">{stats.projects}</span>
-              <span className="text-[0.78rem] text-muted-foreground">projects</span>
+      {/* ── Bottom: Empty state (first-time) OR Quick Stats + Past Projects ── */}
+      {dashboardLoaded && stats.projects === 0 ? (
+        <div className="self-end pt-5 border-t border-border">
+          <div className="rounded-[14px] border-2 border-dashed border-electric-blue/25 bg-electric-blue/3 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="font-display font-bold text-foreground">Screen your first batch of resumes</p>
+              <p className="text-sm text-muted-foreground">Paste a job description → AI builds a rubric → upload resumes → shortlist in minutes.</p>
             </div>
-            <div className="w-px h-[18px] bg-border self-center" />
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-display text-xl font-bold text-foreground">{stats.candidates}</span>
-              <span className="text-[0.78rem] text-muted-foreground">screened</span>
-            </div>
-            <div className="w-px h-[18px] bg-border self-center" />
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-display text-xl font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
-              <span className="text-[0.78rem] text-muted-foreground">avg top score</span>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/dashboard/project/create?demo=1"
+                className="text-sm font-medium text-electric-blue hover:underline flex items-center gap-1"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Try with sample JD
+              </Link>
+              <Button asChild className="bg-electric-blue hover:bg-deep-blue gap-1.5">
+                <Link href="/dashboard/project/create">
+                  <Plus className="h-4 w-4" />
+                  Start screening
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
-
-        {/* Past Projects */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 self-end pt-5 border-t border-border">
+          {/* Quick Stats */}
+          <div className="flex flex-col gap-2">
             <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
-              Past Projects
+              Quick Stats
             </h2>
-            <Link href="/dashboard/projects" className="text-[0.78rem] font-semibold text-electric-blue hover:opacity-70 transition-opacity">
-              All →
-            </Link>
+            <div className="flex items-baseline gap-5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-xl font-bold text-foreground">{stats.projects}</span>
+                <span className="text-[0.78rem] text-muted-foreground">projects</span>
+              </div>
+              <div className="w-px h-[18px] bg-border self-center" />
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-xl font-bold text-foreground">{stats.candidates}</span>
+                <span className="text-[0.78rem] text-muted-foreground">screened</span>
+              </div>
+              <div className="w-px h-[18px] bg-border self-center" />
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-xl font-bold text-electric-blue">{stats.avgTopScore || '—'}</span>
+                <span className="text-[0.78rem] text-muted-foreground">avg top score</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2.5 overflow-x-auto">
-            {recentProjects.length > 0 ? (
-              recentProjects.slice(0, 2).map((project) => {
+
+          {/* Past Projects */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-[0.68rem] font-bold uppercase text-muted-foreground" style={{ letterSpacing: '0.12em' }}>
+                Past Projects
+              </h2>
+              <Link href="/dashboard/projects" className="text-[0.78rem] font-semibold text-electric-blue hover:opacity-70 transition-opacity">
+                All →
+              </Link>
+            </div>
+            <div className="flex items-center gap-2.5 overflow-x-auto">
+              {recentProjects.slice(0, 2).map((project) => {
                 const status = statusConfig[project.status] || statusConfig.draft;
                 return (
                   <div
@@ -289,13 +316,11 @@ export default function DashboardPage() {
                     )}
                   </div>
                 );
-              })
-            ) : (
-              <span className="text-xs text-muted-foreground">No projects yet</span>
-            )}
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

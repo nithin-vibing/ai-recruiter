@@ -1,25 +1,75 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { RubricCriterion } from '@/lib/types';
+
+const GENERATION_STEPS = [
+  'Reading your job description',
+  'Identifying must-have skills',
+  'Mapping competencies to criteria',
+  'Setting scoring weights',
+];
+
+function RubricGenerationProgress() {
+  const [activeStep, setActiveStep] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setActiveStep((prev) => (prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev));
+    }, 1600);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="w-full space-y-2.5 py-1">
+      {GENERATION_STEPS.map((step, i) => {
+        const isDone = i < activeStep;
+        const isActive = i === activeStep;
+        return (
+          <div key={step} className={cn('flex items-center gap-3 transition-opacity duration-300', i > activeStep && 'opacity-30')}>
+            {isDone ? (
+              <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+            ) : isActive ? (
+              <Loader2 className="h-4 w-4 text-electric-blue animate-spin shrink-0" />
+            ) : (
+              <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+            )}
+            <span className={cn(
+              'text-sm transition-colors',
+              isDone && 'text-success',
+              isActive && 'text-foreground font-medium',
+              !isDone && !isActive && 'text-muted-foreground',
+            )}>
+              {step}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface CreateProjectFormProps {
   onGenerateRubric: (data: { name: string; roleName: string; jobDescription: string }) => Promise<RubricCriterion[]>;
   onSubmit: (data: { name: string; roleName: string; jobDescription: string }) => void;
   isGenerating: boolean;
+  initialValues?: { name: string; roleName: string; jobDescription: string };
 }
 
-export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating }: CreateProjectFormProps) {
-  const [name, setName] = useState('');
-  const [roleName, setRoleName] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
+export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, initialValues }: CreateProjectFormProps) {
+  const [name, setName] = useState(initialValues?.name || '');
+  const [roleName, setRoleName] = useState(initialValues?.roleName || '');
+  const [jobDescription, setJobDescription] = useState(initialValues?.jobDescription || '');
 
   const isValid = name.trim() && roleName.trim() && jobDescription.trim();
 
@@ -70,24 +120,24 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating }: 
             />
           </Field>
 
-          <Button
-            className="w-full bg-electric-blue hover:bg-deep-blue"
-            size="lg"
-            disabled={!isValid || isGenerating}
-            onClick={handleGenerateRubric}
-          >
-            {isGenerating ? (
-              <>
-                <Spinner className="h-4 w-4" />
-                Creating Rubric...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Create Screening Rubric
-              </>
-            )}
-          </Button>
+          {isGenerating ? (
+            <div className="rounded-xl border bg-muted/30 px-4 py-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Building your rubric
+              </p>
+              <RubricGenerationProgress />
+            </div>
+          ) : (
+            <Button
+              className="w-full bg-electric-blue hover:bg-deep-blue"
+              size="lg"
+              disabled={!isValid}
+              onClick={handleGenerateRubric}
+            >
+              <Sparkles className="h-4 w-4" />
+              Create Screening Rubric
+            </Button>
+          )}
         </FieldGroup>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -26,6 +26,9 @@ import {
   ShieldCheck,
   ShieldAlert,
   Shield,
+  Keyboard,
+  GitCompare,
+  X as XIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Candidate, CandidateStatus, FilterStatus } from '@/lib/types';
@@ -74,11 +77,132 @@ function getCriterionBarColor(ratio: number): string {
   return 'bg-destructive';
 }
 
-// Only medium/low are shown — high confidence is the expected default, no badge needed
 const confidenceConfig: Record<string, { label: string; icon: typeof Shield; className: string }> = {
+  high:   { label: 'High Confidence', icon: ShieldCheck, className: 'text-success border-success/30 bg-success/10' },
   medium: { label: 'Review Carefully', icon: Shield,      className: 'text-warning border-warning/30 bg-warning/10' },
   low:    { label: 'Low Evidence',     icon: ShieldAlert, className: 'text-destructive border-destructive/30 bg-destructive/10' },
 };
+
+/** Split text into segments, wrapping matched evidence quotes with a highlight marker. */
+function buildSegments(text: string, quotes: string[]): { text: string; highlight: boolean; criterion?: string }[] {
+  const validQuotes = quotes.filter((q) => q && q.length > 15);
+  if (validQuotes.length === 0) return [{ text, highlight: false }];
+
+  // Build a sorted list of [start, end, quote] matches
+  type Match = { start: number; end: number; criterion: string };
+  const matches: Match[] = [];
+  for (const q of validQuotes) {
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx !== -1) matches.push({ start: idx, end: idx + q.length, criterion: q });
+  }
+  if (matches.length === 0) return [{ text, highlight: false }];
+
+  // Sort by position, remove overlaps
+  matches.sort((a, b) => a.start - b.start);
+  const merged: Match[] = [matches[0]];
+  for (const m of matches.slice(1)) {
+    if (m.start < merged[merged.length - 1].end) continue; // skip overlap
+    merged.push(m);
+  }
+
+  const segments: { text: string; highlight: boolean; criterion?: string }[] = [];
+  let cursor = 0;
+  for (const { start, end, criterion } of merged) {
+    if (start > cursor) segments.push({ text: text.slice(cursor, start), highlight: false });
+    segments.push({ text: text.slice(start, end), highlight: true, criterion });
+    cursor = end;
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor), highlight: false });
+  return segments;
+}
+
+function ResumeWithHighlights({ resumeUrl, evidenceQuotes }: { resumeUrl: string; evidenceQuotes: string[] }) {
+  const [resumeText, setResumeText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const fetchedUrl = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (fetchedUrl.current === resumeUrl) return;
+    fetchedUrl.current = resumeUrl;
+    setLoading(true);
+    setError(false);
+    setResumeText(null);
+
+    (async () => {
+      try {
+        const { extractTextFromPdf } = await import('@/lib/pdf-extractor');
+        const resp = await fetch(resumeUrl);
+        const buf = await resp.arrayBuffer();
+        const text = await extractTextFromPdf(buf);
+        setResumeText(text.trim());
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [resumeUrl]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-electric-blue border-t-transparent" />
+        <p className="text-sm text-muted-foreground">Extracting text to show highlights...</p>
+      </div>
+    );
+  }
+
+  if (error || !resumeText) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-6">
+        <FileText className="h-10 w-10 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">Couldn&apos;t extract text from this PDF.</p>
+        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-electric-blue hover:underline">
+          Open resume →
+        </a>
+      </div>
+    );
+  }
+
+  const segments = buildSegments(resumeText, evidenceQuotes);
+  const highlightCount = segments.filter((s) => s.highlight).length;
+
+  return (
+    <div className="h-full flex flex-col gap-2 min-h-0">
+      {highlightCount > 0 && (
+        <p className="text-xs text-muted-foreground shrink-0">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-warning/60 mr-1.5 align-middle" />
+          {highlightCount} AI-cited passage{highlightCount !== 1 ? 's' : ''} highlighted
+        </p>
+      )}
+      <div className="flex-1 overflow-y-auto rounded-lg border bg-card p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">
+        {segments.map((seg, i) =>
+          seg.highlight ? (
+            <mark
+              key={i}
+              className="bg-warning/30 text-foreground rounded-sm px-0.5 not-italic"
+              title={seg.criterion}
+            >
+              {seg.text}
+            </mark>
+          ) : (
+            <span key={i}>{seg.text}</span>
+          )
+        )}
+      </div>
+      <a
+        href={resumeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-electric-blue hover:underline"
+      >
+        <ExternalLink className="h-3 w-3" />
+        Open original PDF
+      </a>
+    </div>
+  );
+}
 
 export function ResultsTable({
   candidates,
@@ -94,6 +218,8 @@ export function ResultsTable({
   const [detailTab, setDetailTab] = useState<'reasoning' | 'resume'>('reasoning');
   const [tempComments, setTempComments] = useState('');
   const [editingComments, setEditingComments] = useState(false);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
 
   const filteredCandidates = useMemo(() => {
     let result = [...candidates];
@@ -146,6 +272,60 @@ export function ResultsTable({
       onCommentsChange(selectedCandidate.id, tempComments);
     }
     setEditingComments(false);
+  };
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────────
+  // J / ↓  → next candidate    K / ↑  → previous candidate
+  // S      → shortlist         H      → hold         R → reject    P → pending
+  // ?      → toggle cheat sheet
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Don't fire when user is typing in an input/textarea
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return;
+
+    switch (e.key) {
+      case 'j':
+      case 'ArrowDown':
+        e.preventDefault();
+        navigateNext();
+        break;
+      case 'k':
+      case 'ArrowUp':
+        e.preventDefault();
+        navigatePrev();
+        break;
+      case 's':
+        if (selectedCandidate) onStatusChange(selectedCandidate.id, 'shortlisted');
+        break;
+      case 'h':
+        if (selectedCandidate) onStatusChange(selectedCandidate.id, 'hold');
+        break;
+      case 'r':
+        if (selectedCandidate) onStatusChange(selectedCandidate.id, 'rejected');
+        break;
+      case 'p':
+        if (selectedCandidate) onStatusChange(selectedCandidate.id, 'pending');
+        break;
+      case '?':
+        setShowShortcuts((v) => !v);
+        break;
+    }
+  }, [navigateNext, navigatePrev, selectedCandidate, onStatusChange]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  const toggleCompare = (id: string) => {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id]; // swap oldest out
+      return [...prev, id];
+    });
+    setCompareMode(false);
   };
 
   const exportToCsv = () => {
@@ -208,12 +388,64 @@ export function ResultsTable({
             <span className="text-warning">{statCounts.hold} hold</span>
             <span className="text-destructive">{statCounts.rejected} rejected</span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowShortcuts((v) => !v)}
+            title="Keyboard shortcuts (?)"
+            className="text-muted-foreground"
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+          </Button>
           <Button variant="outline" size="sm" onClick={exportToCsv}>
             <Download className="h-3.5 w-3.5" />
             Export CSV
           </Button>
         </div>
       </div>
+
+      {/* ── Compare bar (shown when 1–2 candidates selected) ── */}
+      {compareIds.length > 0 && !compareMode && (
+        <div className="flex items-center gap-3 rounded-lg border border-electric-blue/30 bg-electric-blue/5 px-4 py-2">
+          <GitCompare className="h-4 w-4 text-electric-blue shrink-0" />
+          <span className="text-sm text-muted-foreground flex-1">
+            {compareIds.length === 1
+              ? 'Select one more candidate to compare'
+              : `${filteredCandidates.find(c => c.id === compareIds[0])?.name ?? '—'} vs ${filteredCandidates.find(c => c.id === compareIds[1])?.name ?? '—'}`}
+          </span>
+          {compareIds.length === 2 && (
+            <Button size="sm" className="bg-electric-blue hover:bg-deep-blue h-7 text-xs" onClick={() => setCompareMode(true)}>
+              Compare
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => { setCompareIds([]); setCompareMode(false); }}>
+            <XIcon className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* ── Keyboard shortcut cheat sheet ── */}
+      {showShortcuts && (
+        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Keyboard shortcuts</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
+            {[
+              { key: 'J / ↓', label: 'Next candidate' },
+              { key: 'K / ↑', label: 'Prev candidate' },
+              { key: 'S', label: 'Shortlist' },
+              { key: 'H', label: 'Hold' },
+              { key: 'R', label: 'Reject' },
+              { key: 'P', label: 'Reset to pending' },
+              { key: '?', label: 'Toggle this panel' },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <kbd className="px-1.5 py-0.5 rounded border bg-background text-xs font-mono font-medium">{key}</kbd>
+                <span className="text-muted-foreground text-xs">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Filters ── */}
       <div className="flex items-center gap-2">
@@ -260,15 +492,30 @@ export function ResultsTable({
               <div
                 key={candidate.id}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50',
-                  selectedCandidate?.id === candidate.id && 'bg-electric-blue/5 border-l-2 border-l-electric-blue'
+                  'group flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50',
+                  selectedCandidate?.id === candidate.id && !compareMode && 'bg-electric-blue/5 border-l-2 border-l-electric-blue',
+                  compareIds.includes(candidate.id) && 'bg-electric-blue/5'
                 )}
                 onClick={() => {
+                  if (compareIds.length > 0) { toggleCompare(candidate.id); return; }
                   setSelectedId(candidate.id);
                   setEditingComments(false);
                   setDetailTab('reasoning');
                 }}
               >
+                {/* Checkbox: visible on hover or when compare mode active */}
+                <div className={cn(
+                  'shrink-0 transition-all',
+                  compareIds.length > 0 ? 'opacity-100 w-4' : 'opacity-0 group-hover:opacity-100 w-0 group-hover:w-4 overflow-hidden'
+                )}>
+                  <input
+                    type="checkbox"
+                    checked={compareIds.includes(candidate.id)}
+                    onChange={() => toggleCompare(candidate.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-3.5 w-3.5 rounded accent-electric-blue cursor-pointer"
+                  />
+                </div>
                 <span className="text-xs text-muted-foreground w-5 text-right shrink-0">
                   {candidate.rank}
                 </span>
@@ -288,8 +535,78 @@ export function ResultsTable({
           </div>
         </Card>
 
+        {/* ── Right: Compare panel ── */}
+        {compareMode && compareIds.length === 2 ? (() => {
+          const cA = candidates.find(c => c.id === compareIds[0]);
+          const cB = candidates.find(c => c.id === compareIds[1]);
+          if (!cA || !cB) return null;
+          // Union of all criteria
+          const allCriteria = Array.from(new Set([...cA.scores.map(s => s.criterionName), ...cB.scores.map(s => s.criterionName)]));
+          return (
+            <Card className="overflow-hidden flex flex-col">
+              <CardHeader className="p-3 pb-2 border-b shrink-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Side-by-side comparison</span>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setCompareMode(false); setCompareIds([]); }}>
+                    <XIcon className="h-3 w-3" /> Exit
+                  </Button>
+                </div>
+              </CardHeader>
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                {/* Header row */}
+                <div className="grid grid-cols-2 gap-4">
+                  {[cA, cB].map((c) => (
+                    <div key={c.id} className="rounded-lg border p-3 space-y-1">
+                      <p className="font-display font-bold text-sm leading-tight">{c.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span className={cn('text-2xl font-bold tabular-nums', getScoreColor(c.totalScore))}>{c.totalScore}</span>
+                        <span className="text-xs text-muted-foreground">/ 100</span>
+                        <Badge variant="outline" className={cn('text-xs', statusColors[c.status])}>
+                          {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Criteria comparison */}
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Criteria breakdown</p>
+                  {allCriteria.map((criterion) => {
+                    const sA = cA.scores.find(s => s.criterionName === criterion);
+                    const sB = cB.scores.find(s => s.criterionName === criterion);
+                    const ratioA = sA ? sA.score / sA.maxScore : 0;
+                    const ratioB = sB ? sB.score / sB.maxScore : 0;
+                    return (
+                      <div key={criterion} className="space-y-1">
+                        <p className="text-xs font-medium truncate">{criterion}</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[{ s: sA, ratio: ratioA, name: cA.name }, { s: sB, ratio: ratioB, name: cB.name }].map(({ s, ratio, name }) => (
+                            <div key={name} className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 bg-muted rounded-full flex-1 overflow-hidden">
+                                  <div className={cn('h-full rounded-full', getCriterionBarColor(ratio))} style={{ width: `${ratio * 100}%` }} />
+                                </div>
+                                <span className={cn('text-xs tabular-nums font-semibold shrink-0 w-9 text-right', getScoreColor(ratio * 100))}>
+                                  {s ? `${s.score}/${s.maxScore}` : '—'}
+                                </span>
+                              </div>
+                              {s?.evidence && (
+                                <p className="text-xs text-muted-foreground/70 italic line-clamp-1">&ldquo;{s.evidence}&rdquo;</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          );
+        })() : null}
+
         {/* ── Right: Detail panel ── */}
-        {selectedCandidate ? (
+        {!compareMode && selectedCandidate ? (
           <Card className="overflow-hidden flex flex-col">
             {/* Header */}
             <CardHeader className="p-3 pb-2 border-b shrink-0">
@@ -424,38 +741,10 @@ export function ResultsTable({
               {detailTab === 'resume' && (
                 <div className="h-full flex flex-col">
                   {selectedCandidate.resumeUrl ? (
-                    <div className="flex flex-col h-full gap-2">
-                      <a
-                        href={selectedCandidate.resumeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-electric-blue hover:underline shrink-0"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Open in new tab
-                      </a>
-                      <object
-                        data={selectedCandidate.resumeUrl}
-                        type="application/pdf"
-                        className="w-full flex-1 rounded-lg border"
-                        style={{ minHeight: '400px' }}
-                        title={`Resume - ${selectedCandidate.name}`}
-                      >
-                        {/* Fallback if browser can't embed */}
-                        <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-6">
-                          <FileText className="h-10 w-10 text-muted-foreground/30" />
-                          <p className="text-sm text-muted-foreground">Your browser can&apos;t preview this PDF inline.</p>
-                          <a
-                            href={selectedCandidate.resumeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-electric-blue hover:underline"
-                          >
-                            Open resume →
-                          </a>
-                        </div>
-                      </object>
-                    </div>
+                    <ResumeWithHighlights
+                      resumeUrl={selectedCandidate.resumeUrl}
+                      evidenceQuotes={selectedCandidate.scores.map((s) => s.evidence).filter(Boolean)}
+                    />
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                       <FileText className="h-10 w-10 text-muted-foreground/30 mb-3" />
@@ -530,11 +819,11 @@ export function ResultsTable({
               </div>
             </div>
           </Card>
-        ) : (
+        ) : (!compareMode && !selectedCandidate ? (
           <Card className="flex items-center justify-center">
             <p className="text-muted-foreground">Select a candidate to view details</p>
           </Card>
-        )}
+        ) : null)}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
@@ -12,11 +12,39 @@ import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChevronDown, Lock } from 'lucide-react';
+import { CheckCircle, ChevronDown, Lock, Sparkles } from 'lucide-react';
 import type { RubricCriterion } from '@/lib/types';
 
-export default function CreateProjectPage() {
+const DEMO_VALUES = {
+  name: 'Frontend Engineer Hiring — Q2',
+  roleName: 'Senior Frontend Engineer',
+  jobDescription: `We're building a consumer fintech app and need a Senior Frontend Engineer to lead our web platform.
+
+Responsibilities:
+- Architect and build complex React components and systems
+- Lead technical decisions for frontend architecture
+- Collaborate closely with design and product teams
+- Mentor junior engineers and conduct code reviews
+- Drive performance optimization and accessibility improvements
+
+Requirements:
+- 4+ years of production React experience
+- Strong TypeScript skills
+- Experience with Next.js or similar SSR frameworks
+- Track record of shipping high-quality UI at scale
+- Experience building or maintaining design systems
+
+Nice to have:
+- Startup experience (Series A–C)
+- Familiarity with Tailwind CSS or utility-first CSS
+- Open-source contributions
+- Experience with testing frameworks (Jest, Playwright, Cypress)`,
+};
+
+function CreateProjectPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get('demo') === '1';
   const { setProjectDetails, setRubric, currentProject, setCurrentStep } = useProject();
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -186,11 +214,20 @@ export default function CreateProjectPage() {
             )}
           </Card>
         ) : (
-          <CreateProjectForm
-            onGenerateRubric={handleGenerateRubric}
-            onSubmit={handleFormSubmit}
-            isGenerating={isGenerating}
-          />
+          <>
+            {isDemo && (
+              <div className="flex items-center gap-2 rounded-lg border border-electric-blue/30 bg-electric-blue/5 px-4 py-2.5 text-sm">
+                <Sparkles className="h-4 w-4 text-electric-blue shrink-0" />
+                <span className="text-muted-foreground">Pre-filled with a sample Frontend Engineer JD — feel free to edit or replace it.</span>
+              </div>
+            )}
+            <CreateProjectForm
+              onGenerateRubric={handleGenerateRubric}
+              onSubmit={handleFormSubmit}
+              isGenerating={isGenerating}
+              initialValues={isDemo ? DEMO_VALUES : undefined}
+            />
+          </>
         )}
 
         {showRubric && localRubric.length > 0 && (
@@ -205,5 +242,13 @@ export default function CreateProjectPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CreateProjectPage() {
+  return (
+    <Suspense>
+      <CreateProjectPageContent />
+    </Suspense>
   );
 }

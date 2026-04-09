@@ -91,8 +91,6 @@ export default function UploadResumesPage() {
     // Ask for browser notification permission now (requires user gesture)
     requestNotificationPermission();
 
-    const zipFile = files[0];
-
     // Set initial progress
     setScreeningProgress({
       current: 0,
@@ -176,12 +174,31 @@ export default function UploadResumesPage() {
     // The API route may timeout, but n8n will keep processing.
     // onExtractionProgress fires during client-side PDF extraction and gives us
     // the total file count so the progress bar has a real denominator.
-    startScreening(projectId, zipFile, (_current, total) => {
-      if (total > 0 && totalFilesRef.current === 0) {
-        totalFilesRef.current = total;
-        setScreeningProgress({ current: screeningProgress?.current ?? 0, total, isComplete: false });
+    // If user uploaded individual PDFs, pass the array; if ZIP, pass the single file
+    const screeningInput = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')
+      ? files[0]
+      : files;
+
+    startScreening(
+      projectId,
+      screeningInput,
+      (_current, total) => {
+        if (total > 0 && totalFilesRef.current === 0) {
+          totalFilesRef.current = total;
+          setScreeningProgress({ current: screeningProgress?.current ?? 0, total, isComplete: false });
+        }
+      },
+      (failedFiles) => {
+        const count = failedFiles.length;
+        const label = count === 1 ? `1 file` : `${count} files`;
+        toast.warning(`${label} couldn't be read and were skipped`, {
+          description: failedFiles.length <= 3
+            ? failedFiles.join(', ')
+            : `${failedFiles.slice(0, 3).join(', ')} and ${failedFiles.length - 3} more. These are likely scanned or image-only PDFs.`,
+          duration: 8000,
+        });
       }
-    }).catch((error) => {
+    ).catch((error) => {
       console.log('Screening request completed or timed out:', error?.message || 'done');
       // This is expected — Vercel functions timeout after 10-60s
       // n8n continues processing regardless

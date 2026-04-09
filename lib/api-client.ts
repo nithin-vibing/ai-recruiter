@@ -42,12 +42,18 @@ export async function generateRubric(data: GenerateRubricPayload) {
  */
 export async function startScreening(
   projectId: string,
-  zipFile: File,
-  onExtractionProgress?: (current: number, total: number, fileName: string) => void
+  input: File | File[],
+  onExtractionProgress?: (current: number, total: number, fileName: string) => void,
+  onExtractionComplete?: (failedFiles: string[]) => void
 ) {
   // Step 1: Convert PDFs to text in the browser
-  const { convertPdfZipToTextZip } = await import('./pdf-extractor');
-  const { textZip, fileCount, originalFiles } = await convertPdfZipToTextZip(zipFile, onExtractionProgress);
+  // Accepts either a single ZIP file or an array of individual PDF/TXT files
+  const { convertPdfZipToTextZip, convertPdfFilesToTextZip } = await import('./pdf-extractor');
+  const isZip = !Array.isArray(input);
+  const { textZip, fileCount, originalFiles, failedFiles } = isZip
+    ? await convertPdfZipToTextZip(input as File, onExtractionProgress)
+    : await convertPdfFilesToTextZip(input as File[], onExtractionProgress);
+  if (failedFiles.length > 0) onExtractionComplete?.(failedFiles);
 
   if (fileCount === 0) {
     throw new Error('No readable resume files found in ZIP. Please upload PDFs or TXT files.');
