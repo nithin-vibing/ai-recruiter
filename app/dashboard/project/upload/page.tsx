@@ -218,7 +218,7 @@ export default function UploadResumesPage() {
           </p>
           {currentProject?.name && (
             <p className="mt-2 text-sm">
-              <span className="text-muted-foreground">Project:</span>{' '}
+              <span className="text-muted-foreground">Role:</span>{' '}
               <span className="font-medium">{currentProject.name}</span>
             </p>
           )}

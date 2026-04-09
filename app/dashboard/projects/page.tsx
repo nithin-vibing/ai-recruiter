@@ -129,7 +129,7 @@ export default function ProjectsPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
-            Past Projects
+            Past Roles
           </h1>
           <p className="mt-1 text-muted-foreground">
             View and manage your previous recruitment evaluations
@@ -138,7 +138,7 @@ export default function ProjectsPage() {
         <Button asChild className="bg-electric-blue hover:bg-deep-blue">
           <Link href="/dashboard/project/create">
             <Plus className="h-4 w-4" />
-            New Project
+            New Role
           </Link>
         </Button>
       </div>
@@ -156,14 +156,14 @@ export default function ProjectsPage() {
           <CardContent className="py-16">
             <Empty>
               <FolderOpen className="h-12 w-12 text-muted-foreground/50" />
-              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyTitle>No roles yet</EmptyTitle>
               <EmptyDescription>
-                Create your first project to start evaluating candidates with AI
+                Create your first role to start evaluating candidates with AI
               </EmptyDescription>
               <Button asChild className="mt-4 bg-electric-blue hover:bg-deep-blue">
                 <Link href="/dashboard/project/create">
                   <Plus className="h-4 w-4" />
-                  Create Project
+                  Create Role
                 </Link>
               </Button>
             </Empty>

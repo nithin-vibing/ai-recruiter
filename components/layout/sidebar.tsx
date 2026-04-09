@@ -9,8 +9,8 @@ import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/project/create', label: 'New Project', icon: Plus },
-  { href: '/dashboard/projects', label: 'Past Projects', icon: FolderOpen },
+  { href: '/dashboard/project/create', label: 'New Role', icon: Plus },
+  { href: '/dashboard/projects', label: 'Past Roles', icon: FolderOpen },
   { href: '/dashboard/pricing', label: 'Pricing', icon: CreditCard },
 ];
 

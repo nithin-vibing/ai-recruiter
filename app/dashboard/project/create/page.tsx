@@ -144,7 +144,7 @@ function CreateProjectPageContent() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
-            Create New Project
+            Create New Role
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Define the job role and generate a screening rubric
@@ -162,8 +162,8 @@ function CreateProjectPageContent() {
               Free Tier Limit Reached
             </h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              You&apos;ve created {usageInfo.current} of 3 projects this month on the free plan.
-              Upgrade to Pro for unlimited projects and 500 resumes/month.
+              You&apos;ve created {usageInfo.current} of 3 roles this month on the free plan.
+              Upgrade to Pro for unlimited roles and 500 resumes/month.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <Button variant="outline" onClick={() => router.push('/dashboard')}>
@@ -197,7 +197,7 @@ function CreateProjectPageContent() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className="bg-success/10 text-success border-0">Project Created</Badge>
+                <Badge className="bg-success/10 text-success border-0">Role Created</Badge>
                 <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${formExpanded ? 'rotate-180' : ''}`} />
               </div>
             </CardContent>
