@@ -10,29 +10,33 @@ import { Sparkles, CheckCircle2, Loader2, Link2, FileText, AlertCircle } from 'l
 import { cn } from '@/lib/utils';
 import type { RubricCriterion } from '@/lib/types';
 
-const GENERATION_STEPS = [
-  'Reading your job description',
-  'Identifying must-have skills',
-  'Mapping competencies to criteria',
-  'Setting scoring weights',
-];
+function getGenerationSteps(roleName: string) {
+  const role = roleName.trim() || 'this role';
+  return [
+    'Reading your job description',
+    `Identifying must-have skills for a ${role}`,
+    `Mapping ${role} competencies to criteria`,
+    'Setting scoring weights',
+  ];
+}
 
-function RubricGenerationProgress() {
+function RubricGenerationProgress({ roleName }: { roleName: string }) {
   const [activeStep, setActiveStep] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const steps = getGenerationSteps(roleName);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setActiveStep((prev) => (prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev));
+      setActiveStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
     }, 1600);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [steps.length]);
 
   return (
     <div className="w-full space-y-2.5 py-1">
-      {GENERATION_STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const isDone = i < activeStep;
         const isActive = i === activeStep;
         return (
@@ -219,7 +223,7 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, in
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                 {isFetchingJd ? 'Reading job posting…' : 'Building your scorecard'}
               </p>
-              {isGenerating && <RubricGenerationProgress />}
+              {isGenerating && <RubricGenerationProgress roleName={roleName} />}
               {isFetchingJd && (
                 <div className="flex items-center gap-3">
                   <Loader2 className="h-4 w-4 text-electric-blue animate-spin shrink-0" />

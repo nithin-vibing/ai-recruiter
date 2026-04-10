@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { UploadResumes } from '@/components/screens/upload-resumes';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScreenResumes, incrementResumeCount } from '@/lib/api-client';
+import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScreenResumes, incrementResumeCount, mapCandidateRow } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -51,6 +51,8 @@ export default function UploadResumesPage() {
   const [noProject, setNoProject] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const totalFilesRef = useRef<number>(0);
+  // Accumulates candidates as they arrive via realtime — used by the INSERT handler.
+  const liveCandidatesRef = useRef<import('@/lib/types').Candidate[]>([]);
 
   const handleThresholdChange = (newThreshold: PercentileThreshold) => {
     setThreshold(newThreshold);
@@ -98,9 +100,24 @@ export default function UploadResumesPage() {
       isComplete: false,
     });
 
-    // Subscribe to real-time updates — each candidate insert fires this
-    const unsubscribe = subscribeToScreeningProgress(projectId, () => {
-      // We'll use polling as the primary method since WebSocket may not always work
+    // Subscribe to real-time updates — each candidate INSERT fires this.
+    // We accumulate candidates progressively so the results page can start
+    // populating before screening is complete, eliminating the blank-wait.
+    liveCandidatesRef.current = [];
+    const unsubscribe = subscribeToScreeningProgress(projectId, (raw) => {
+      const incoming = mapCandidateRow(raw, 0); // rank assigned below after sort
+      // Deduplicate in case of reconnection replays
+      if (liveCandidatesRef.current.some(c => c.id === incoming.id)) return;
+      const updated = [...liveCandidatesRef.current, incoming]
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .map((c, i) => ({ ...c, rank: i + 1 }));
+      liveCandidatesRef.current = updated;
+      setCandidates(updated);
+      setScreeningProgress({
+        current: updated.length,
+        total: totalFilesRef.current || updated.length,
+        isComplete: false,
+      });
     });
 
     // Start polling for candidates count every 3 seconds

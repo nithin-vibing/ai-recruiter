@@ -138,6 +138,21 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-row {
+  animation: fadeInRow 0.22s ease forwards;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

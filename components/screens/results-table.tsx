@@ -29,9 +29,17 @@ import {
   Keyboard,
   GitCompare,
   X as XIcon,
+  Info,
+  EyeOff,
+  ThumbsUp,
+  ThumbsDown,
+  TrendingUp,
 } from 'lucide-react';
+import { submitCriterionFeedback, fetchCriterionFeedback } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import type { Candidate, CandidateStatus, FilterStatus } from '@/lib/types';
+
+type PreviewCandidate = Candidate & { previewScore: number; previewRank: number };
 
 interface ResultsTableProps {
   candidates: Candidate[];
@@ -40,6 +48,8 @@ interface ResultsTableProps {
   percentileThreshold: number;
   onStatusChange: (candidateId: string, status: CandidateStatus) => void;
   onCommentsChange: (candidateId: string, comments: string) => void;
+  previewCandidates?: PreviewCandidate[] | null;
+  blindMode?: boolean;
 }
 
 const statusColors: Record<CandidateStatus, string> = {
@@ -211,7 +221,13 @@ export function ResultsTable({
   percentileThreshold,
   onStatusChange,
   onCommentsChange,
+  previewCandidates,
+  blindMode = false,
 }: ResultsTableProps) {
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('ai-disclaimer-dismissed') === 'true'
+  );
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -232,29 +248,44 @@ export function ResultsTable({
     return result;
   }, [candidates, filter, sortOrder]);
 
+  // displayList: what actually renders in the left panel.
+  // In preview mode: previewCandidates (sorted by estimated score, filter applied here).
+  // In blind mode: filteredCandidates sorted alphabetically by name.
+  // Otherwise: filteredCandidates as-is.
+  const displayList: Candidate[] = useMemo(() => {
+    if (previewCandidates) {
+      if (filter === 'all') return previewCandidates;
+      return previewCandidates.filter(c => c.status === filter);
+    }
+    if (blindMode) {
+      return [...filteredCandidates].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return filteredCandidates;
+  }, [previewCandidates, filteredCandidates, filter, blindMode]);
+
   // Auto-select first candidate if none selected
   const selectedCandidate = useMemo(() => {
     if (selectedId) {
-      return filteredCandidates.find(c => c.id === selectedId) || filteredCandidates[0] || null;
+      return displayList.find(c => c.id === selectedId) || displayList[0] || null;
     }
-    return filteredCandidates[0] || null;
-  }, [filteredCandidates, selectedId]);
+    return displayList[0] || null;
+  }, [displayList, selectedId]);
 
   const selectedIndex = selectedCandidate
-    ? filteredCandidates.findIndex(c => c.id === selectedCandidate.id)
+    ? displayList.findIndex(c => c.id === selectedCandidate.id)
     : -1;
 
   const navigatePrev = () => {
     if (selectedIndex > 0) {
-      setSelectedId(filteredCandidates[selectedIndex - 1].id);
+      setSelectedId(displayList[selectedIndex - 1].id);
       setEditingComments(false);
       setDetailTab('reasoning');
     }
   };
 
   const navigateNext = () => {
-    if (selectedIndex < filteredCandidates.length - 1) {
-      setSelectedId(filteredCandidates[selectedIndex + 1].id);
+    if (selectedIndex < displayList.length - 1) {
+      setSelectedId(displayList[selectedIndex + 1].id);
       setEditingComments(false);
       setDetailTab('reasoning');
     }
@@ -319,6 +350,14 @@ export function ResultsTable({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Fetch criterion feedback once for the whole project on mount.
+  // Keyed by `${candidateId}_${criterionName}` for O(1) lookup per row.
+  useEffect(() => {
+    const projectId = typeof window !== 'undefined' ? localStorage.getItem('currentProjectId') : null;
+    if (!projectId) return;
+    fetchCriterionFeedback(projectId).then(setFeedbackMap).catch(() => {});
+  }, []);
+
   const toggleCompare = (id: string) => {
     setCompareIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
@@ -373,6 +412,23 @@ export function ResultsTable({
 
   return (
     <div className="space-y-4">
+      {/* ── AI disclaimer ── */}
+      {!disclaimerDismissed && (
+        <div className="flex items-start gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>AI scores are a starting point. Screening models can reflect biases in job descriptions — apply your own judgment before making hiring decisions.</span>
+          <button
+            onClick={() => {
+              setDisclaimerDismissed(true);
+              localStorage.setItem('ai-disclaimer-dismissed', 'true');
+            }}
+            className="ml-auto shrink-0 rounded p-0.5 hover:bg-muted transition-colors"
+            aria-label="Dismiss"
+          >
+            <XIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       {/* ── Top bar: Project info + stats + export ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -480,58 +536,103 @@ export function ResultsTable({
           <CardHeader className="p-3 pb-2 border-b shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {filteredCandidates.length} candidates
+                {displayList.length} candidates
               </span>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={toggleSort}>
-                Score <ArrowUpDown className="ml-1 h-3 w-3" />
-              </Button>
+              {!blindMode && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={toggleSort}>
+                  Score <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+              )}
             </div>
           </CardHeader>
+
+          {/* Mode banners */}
+          {blindMode && (
+            <div className="px-3 py-1.5 border-b bg-muted/40 text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
+              <EyeOff className="h-3 w-3 shrink-0" />
+              Blind review mode — sorted by name, scores hidden
+            </div>
+          )}
+          {previewCandidates && !blindMode && (
+            <div className="px-3 py-1.5 border-b bg-electric-blue/5 text-xs flex items-center gap-1 shrink-0">
+              <span className="font-medium text-electric-blue">Preview</span>
+              <span className="text-muted-foreground">· estimated from new weights · click Re-rank to confirm</span>
+            </div>
+          )}
+
           <div className="overflow-y-auto flex-1">
-            {filteredCandidates.map((candidate) => (
-              <div
-                key={candidate.id}
-                className={cn(
-                  'group flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50',
-                  selectedCandidate?.id === candidate.id && !compareMode && 'bg-electric-blue/5 border-l-2 border-l-electric-blue',
-                  compareIds.includes(candidate.id) && 'bg-electric-blue/5'
-                )}
-                onClick={() => {
-                  if (compareIds.length > 0) { toggleCompare(candidate.id); return; }
-                  setSelectedId(candidate.id);
-                  setEditingComments(false);
-                  setDetailTab('reasoning');
-                }}
-              >
-                {/* Checkbox: visible on hover or when compare mode active */}
-                <div className={cn(
-                  'shrink-0 transition-all',
-                  compareIds.length > 0 ? 'opacity-100 w-4' : 'opacity-0 group-hover:opacity-100 w-0 group-hover:w-4 overflow-hidden'
-                )}>
-                  <input
-                    type="checkbox"
-                    checked={compareIds.includes(candidate.id)}
-                    onChange={() => toggleCompare(candidate.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-3.5 w-3.5 rounded accent-electric-blue cursor-pointer"
-                  />
+            {displayList.map((candidate) => {
+              const isPreview = !!previewCandidates;
+              const displayScore = isPreview
+                ? Math.round((candidate as PreviewCandidate).previewScore)
+                : candidate.totalScore;
+              const displayRank = isPreview
+                ? (candidate as PreviewCandidate).previewRank
+                : candidate.rank;
+              const showConfidenceIcon = !blindMode && candidate.confidence && candidate.confidence !== 'high';
+
+              return (
+                <div
+                  key={candidate.id}
+                  className={cn(
+                    'group flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50',
+                    selectedCandidate?.id === candidate.id && !compareMode && 'bg-electric-blue/5 border-l-2 border-l-electric-blue',
+                    compareIds.includes(candidate.id) && 'bg-electric-blue/5',
+                    candidate.confidence === 'low' && !blindMode && 'opacity-75',
+                  )}
+                  onClick={() => {
+                    if (compareIds.length > 0) { toggleCompare(candidate.id); return; }
+                    setSelectedId(candidate.id);
+                    setEditingComments(false);
+                    setDetailTab('reasoning');
+                  }}
+                >
+                  {/* Checkbox: visible on hover or when compare mode active */}
+                  <div className={cn(
+                    'shrink-0 transition-all',
+                    compareIds.length > 0 ? 'opacity-100 w-4' : 'opacity-0 group-hover:opacity-100 w-0 group-hover:w-4 overflow-hidden'
+                  )}>
+                    <input
+                      type="checkbox"
+                      checked={compareIds.includes(candidate.id)}
+                      onChange={() => toggleCompare(candidate.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-3.5 w-3.5 rounded accent-electric-blue cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground w-5 text-right shrink-0">
+                    {displayRank}
+                  </span>
+                  <div className={cn('h-2 w-2 rounded-full shrink-0', statusDot[candidate.status])} />
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                    <p className="text-sm font-medium truncate">{candidate.name}</p>
+                    {showConfidenceIcon && (() => {
+                      const cfg = confidenceConfig[candidate.confidence!];
+                      const Icon = cfg.icon;
+                      return (
+                        <span title={cfg.label} className="inline-flex shrink-0">
+                          <Icon
+                            className={cn(
+                              'h-3 w-3 opacity-60',
+                              candidate.confidence === 'low' ? 'text-destructive' : 'text-warning'
+                            )}
+                          />
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  {!blindMode && (
+                    <span className={cn(
+                      'text-sm tabular-nums px-2 py-0.5 rounded',
+                      getScoreColor(displayScore),
+                      getScoreBg(displayScore)
+                    )}>
+                      {isPreview ? `~${displayScore}` : displayScore}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs text-muted-foreground w-5 text-right shrink-0">
-                  {candidate.rank}
-                </span>
-                <div className={cn('h-2 w-2 rounded-full shrink-0', statusDot[candidate.status])} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{candidate.name}</p>
-                </div>
-                <span className={cn(
-                  'text-sm tabular-nums px-2 py-0.5 rounded',
-                  getScoreColor(candidate.totalScore),
-                  getScoreBg(candidate.totalScore)
-                )}>
-                  {candidate.totalScore}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
@@ -614,10 +715,16 @@ export function ResultsTable({
                 <div>
                   <h3 className="font-display text-lg font-bold leading-tight">{selectedCandidate.name}</h3>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className={cn('text-xl tabular-nums font-bold', getScoreColor(selectedCandidate.totalScore))}>
-                      {selectedCandidate.totalScore}
-                    </span>
-                    <span className="text-xs text-muted-foreground">/ 100</span>
+                    {!blindMode ? (
+                      <>
+                        <span className={cn('text-xl tabular-nums font-bold', getScoreColor(selectedCandidate.totalScore))}>
+                          {selectedCandidate.totalScore}
+                        </span>
+                            <span className="text-xs text-muted-foreground">/ 100</span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Score hidden</span>
+                    )}
                     <Badge variant="outline" className={cn(statusColors[selectedCandidate.status])}>
                       {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
                     </Badge>
@@ -683,7 +790,14 @@ export function ResultsTable({
 
             {/* Tab content */}
             <div className="flex-1 overflow-hidden p-3 min-h-0">
-              {detailTab === 'reasoning' && (
+              {detailTab === 'reasoning' && blindMode && (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-6">
+                  <EyeOff className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">AI reasoning is hidden in blind review mode.</p>
+                  <p className="text-xs text-muted-foreground/60">Toggle off blind review in the header to see scores and reasoning.</p>
+                </div>
+              )}
+              {detailTab === 'reasoning' && !blindMode && (
                 <div className={cn(
                   'h-full',
                   selectedCandidate.scores.length > 0
@@ -709,10 +823,29 @@ export function ResultsTable({
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Criteria Breakdown</p>
                       {selectedCandidate.scores.map((s) => {
                         const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
+                        const feedbackKey = `${selectedCandidate.id}_${s.criterionName}`;
+                        const currentFeedback = feedbackMap[feedbackKey];
+
+                        const handleFeedback = (direction: 'up' | 'down') => {
+                          const projectId = typeof window !== 'undefined' ? localStorage.getItem('currentProjectId') : null;
+                          if (!projectId) return;
+                          // Toggle off if clicking the same direction
+                          const next = currentFeedback === direction ? undefined : direction;
+                          setFeedbackMap(prev => {
+                            const updated = { ...prev };
+                            if (next) updated[feedbackKey] = next;
+                            else delete updated[feedbackKey];
+                            return updated;
+                          });
+                          if (next) {
+                            submitCriterionFeedback(selectedCandidate.id, s.criterionName, projectId, next);
+                          }
+                        };
+
                         return (
                           <div
                             key={s.criterionId}
-                            className="rounded-md px-1.5 py-1.5 hover:bg-muted/50 transition-colors"
+                            className="group rounded-md px-1.5 py-1.5 hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium w-[130px] shrink-0 truncate">{s.criterionName}</span>
@@ -725,6 +858,36 @@ export function ResultsTable({
                               <span className={cn('text-xs tabular-nums font-semibold w-9 text-right shrink-0', getScoreColor(ratio * 100))}>
                                 {s.score}/{s.maxScore}
                               </span>
+                              {/* Thumbs feedback — visible on hover or when active */}
+                              <div className={cn(
+                                'flex items-center gap-0.5 transition-opacity',
+                                currentFeedback ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              )}>
+                                <button
+                                  onClick={() => handleFeedback('up')}
+                                  title="Score looks right"
+                                  className={cn(
+                                    'h-5 w-5 rounded flex items-center justify-center transition-colors',
+                                    currentFeedback === 'up'
+                                      ? 'text-success bg-success/10'
+                                      : 'text-muted-foreground hover:text-success hover:bg-success/10'
+                                  )}
+                                >
+                                  <ThumbsUp className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleFeedback('down')}
+                                  title="Score seems off"
+                                  className={cn(
+                                    'h-5 w-5 rounded flex items-center justify-center transition-colors',
+                                    currentFeedback === 'down'
+                                      ? 'text-destructive bg-destructive/10'
+                                      : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                                  )}
+                                >
+                                  <ThumbsDown className="h-3 w-3" />
+                                </button>
+                              </div>
                             </div>
                             {s.evidence && (
                               <p className="mt-0.5 ml-[138px] text-xs text-muted-foreground/70 italic leading-snug line-clamp-2">
@@ -780,8 +943,8 @@ export function ResultsTable({
                   <Button variant="ghost" size="sm" className="h-7" disabled={selectedIndex <= 0} onClick={navigatePrev}>
                     <ChevronLeft className="h-4 w-4" /> Previous
                   </Button>
-                  <span className="text-xs text-muted-foreground tabular-nums">{selectedIndex + 1} of {filteredCandidates.length}</span>
-                  <Button variant="ghost" size="sm" className="h-7" disabled={selectedIndex >= filteredCandidates.length - 1} onClick={navigateNext}>
+                  <span className="text-xs text-muted-foreground tabular-nums">{selectedIndex + 1} of {displayList.length}</span>
+                  <Button variant="ghost" size="sm" className="h-7" disabled={selectedIndex >= displayList.length - 1} onClick={navigateNext}>
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

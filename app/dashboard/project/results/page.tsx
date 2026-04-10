@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ResultsTable } from '@/components/screens/results-table';
 import { RubricTable } from '@/components/screens/rubric-table';
@@ -14,8 +14,9 @@ import {
   fetchRubricCriteria,
   fetchCandidates,
   rescoreProject,
+  fetchOverrideInsights,
 } from '@/lib/api-client';
-import { Plus, SlidersHorizontal, ChevronUp } from 'lucide-react';
+import { Plus, SlidersHorizontal, ChevronUp, EyeOff, Eye, TrendingUp, X as XIcon } from 'lucide-react';
 import type { CandidateStatus, RubricCriterion } from '@/lib/types';
 
 export default function ResultsPage() {
@@ -34,6 +35,26 @@ export default function ResultsPage() {
   const [originalRubric, setOriginalRubric] = useState<RubricCriterion[]>([]);
   const [isRescoring, setIsRescoring] = useState(false);
   const [rescoreError, setRescoreError] = useState<string | null>(null);
+  const [blindMode, setBlindMode] = useState(false);
+  const [overrideInsight, setOverrideInsight] = useState<{ total: number; message: string } | null>(null);
+  const [insightDismissed, setInsightDismissed] = useState(false);
+
+  // Live re-rank preview: recompute scores client-side from new rubric weights
+  // while the user edits the rubric, before committing to a full AI re-rank.
+  const previewCandidates = useMemo(() => {
+    if (!showRubricEditor || rubric.length === 0 || candidates.length === 0) return null;
+    return [...candidates]
+      .map(c => {
+        const previewScore = c.scores.reduce((sum, s) => {
+          const criterion = rubric.find(r => r.name === s.criterionName);
+          if (!criterion || s.maxScore === 0) return sum;
+          return sum + (s.score / s.maxScore) * criterion.weight * 100;
+        }, 0);
+        return { ...c, previewScore: Math.round(previewScore * 10) / 10 };
+      })
+      .sort((a, b) => b.previewScore - a.previewScore)
+      .map((c, i) => ({ ...c, previewRank: i + 1 }));
+  }, [candidates, rubric, showRubricEditor]);
 
   // Load rubric when editor opens — use localStorage ID (actual Supabase project ID)
   useEffect(() => {
@@ -49,6 +70,17 @@ export default function ResultsPage() {
       }
     }
   }, [showRubricEditor]);
+
+  // Fetch override pattern insights once on mount — only surfaces when ≥5 overrides exist.
+  useEffect(() => {
+    const projectId = localStorage.getItem('currentProjectId');
+    if (!projectId) return;
+    const dismissedKey = `insights-dismissed-${projectId}`;
+    if (localStorage.getItem(dismissedKey) === 'true') return;
+    fetchOverrideInsights(projectId)
+      .then(insight => { if (insight) setOverrideInsight(insight); })
+      .catch(() => {});
+  }, []);
 
   const handleStatusChange = async (candidateId: string, status: CandidateStatus) => {
     const candidate = candidates.find(c => c.id === candidateId);
@@ -138,6 +170,14 @@ export default function ResultsPage() {
         <div className="flex items-center gap-2">
           <StepIndicator currentStep={3} />
           <Button
+            variant={blindMode ? 'default' : 'outline'}
+            onClick={() => setBlindMode(b => !b)}
+            title="Hide AI scores to review resumes without anchoring bias"
+          >
+            {blindMode ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {blindMode ? 'Show scores' : 'Blind review'}
+          </Button>
+          <Button
             variant="outline"
             onClick={() => {
               setShowRubricEditor(prev => !prev);
@@ -177,6 +217,25 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* Override pattern insight card */}
+      {overrideInsight && !insightDismissed && (
+        <div className="flex items-start gap-3 rounded-lg border border-electric-blue/20 bg-electric-blue/5 px-4 py-3 text-sm">
+          <TrendingUp className="h-4 w-4 text-electric-blue shrink-0 mt-0.5" />
+          <p className="flex-1 text-muted-foreground">{overrideInsight.message}</p>
+          <button
+            onClick={() => {
+              setInsightDismissed(true);
+              const projectId = localStorage.getItem('currentProjectId');
+              if (projectId) localStorage.setItem(`insights-dismissed-${projectId}`, 'true');
+            }}
+            className="shrink-0 rounded p-0.5 hover:bg-electric-blue/10 transition-colors text-muted-foreground"
+            aria-label="Dismiss"
+          >
+            <XIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Results Table */}
       <ResultsTable
         candidates={candidates}
@@ -185,6 +244,8 @@ export default function ResultsPage() {
         percentileThreshold={currentProject?.percentileThreshold || 100}
         onStatusChange={handleStatusChange}
         onCommentsChange={handleCommentsChange}
+        previewCandidates={previewCandidates}
+        blindMode={blindMode}
       />
     </div>
   );

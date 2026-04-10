@@ -41,6 +41,32 @@ Nice to have:
 - Experience with testing frameworks (Jest, Playwright, Cypress)`,
 };
 
+function RubricTableSkeleton() {
+  return (
+    <div className="rounded-xl border bg-card">
+      <div className="px-6 py-4 border-b flex items-center justify-between">
+        <div className="space-y-1.5">
+          <div className="h-5 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-3.5 w-64 rounded bg-muted animate-pulse" />
+        </div>
+        <div className="h-6 w-24 rounded-full bg-muted animate-pulse" />
+      </div>
+      <div className="p-6 space-y-3">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex gap-3 items-center" style={{ opacity: 1 - i * 0.12 }}>
+            <div className="h-9 w-[180px] rounded-md bg-muted animate-pulse shrink-0" />
+            <div className="h-9 flex-1 rounded-md bg-muted animate-pulse" />
+            <div className="h-9 w-[90px] rounded-md bg-muted animate-pulse shrink-0" />
+            <div className="h-9 w-[100px] rounded-md bg-muted animate-pulse shrink-0" />
+            <div className="h-9 w-[48px] rounded-md bg-muted animate-pulse shrink-0" />
+          </div>
+        ))}
+        <div className="h-10 w-full rounded-lg bg-muted animate-pulse mt-4" />
+      </div>
+    </div>
+  );
+}
+
 function CreateProjectPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -230,6 +256,8 @@ function CreateProjectPageContent() {
           </>
         )}
 
+        {isGenerating && !showRubric && <RubricTableSkeleton />}
+
         {showRubric && localRubric.length > 0 && (
           <div ref={rubricRef}>
             <RubricTable
@@ -237,6 +265,7 @@ function CreateProjectPageContent() {
               originalRubric={originalRubric}
               onRubricChange={handleRubricChange}
               onApprove={handleApproveRubric}
+              animateIn
             />
           </div>
         )}

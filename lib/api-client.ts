@@ -148,6 +148,44 @@ export function subscribeToScreeningProgress(
 // ─── Screen 3: Fetch Results ─────────────────────────────────────────────────
 
 /**
+ * Map a raw Supabase candidate row (snake_case) to the frontend Candidate type.
+ * Exported so realtime INSERT payloads can be mapped the same way as batch fetches.
+ */
+export function mapCandidateRow(row: Record<string, unknown>, rank: number): Candidate {
+  let resumeUrl: string | undefined;
+  if (row.source_filename) {
+    const pdfName = (row.source_filename as string).replace(/\.txt$/i, '.pdf');
+    resumeUrl = getResumeUrl(row.project_id as string, pdfName);
+  }
+
+  type RawScore = { criterion: string; score: number; max_score: number; weight: number; evidence: string };
+
+  return {
+    id: row.id as string,
+    projectId: row.project_id as string,
+    rank,
+    name: (row.candidate_name as string) || 'Unknown',
+    email: (row.email as string) || '',
+    phone: (row.phone as string) || '',
+    linkedIn: (row.linkedin as string) || '',
+    totalScore: Number(row.score) || 0,
+    scores: ((row.criteria_scores as RawScore[]) || []).map(cs => ({
+      criterionId: cs.criterion,
+      criterionName: cs.criterion,
+      score: cs.score,
+      maxScore: cs.max_score,
+      weight: cs.weight,
+      evidence: cs.evidence || '',
+    })),
+    reasoning: (row.reasoning as string) || '',
+    confidence: (row.confidence as 'high' | 'medium' | 'low') || undefined,
+    status: ((row.status as string) || 'pending') as CandidateStatus,
+    comments: (row.user_comment as string) || '',
+    resumeUrl,
+  };
+}
+
+/**
  * Fetch all candidates for a project, sorted by score descending.
  */
 export async function fetchCandidates(projectId: string): Promise<Candidate[]> {
@@ -159,40 +197,7 @@ export async function fetchCandidates(projectId: string): Promise<Candidate[]> {
 
   if (error) throw new Error(`Failed to fetch candidates: ${error.message}`);
 
-  // Map Supabase column names (snake_case) to frontend types (camelCase)
-  return (data || []).map((row, index) => {
-    // Build resume URL from source_filename if available
-    let resumeUrl: string | undefined;
-    if (row.source_filename) {
-      // source_filename is the .txt name; try .pdf version first
-      const pdfName = row.source_filename.replace(/\.txt$/i, '.pdf');
-      resumeUrl = getResumeUrl(row.project_id, pdfName);
-    }
-
-    return {
-      id: row.id,
-      projectId: row.project_id,
-      rank: index + 1,
-      name: row.candidate_name || 'Unknown',
-      email: row.email || '',
-      phone: row.phone || '',
-      linkedIn: row.linkedin || '',
-      totalScore: Number(row.score) || 0,
-      scores: (row.criteria_scores || []).map((cs: { criterion: string; score: number; max_score: number; weight: number; evidence: string }) => ({
-        criterionId: cs.criterion,
-        criterionName: cs.criterion,
-        score: cs.score,
-        maxScore: cs.max_score,
-        weight: cs.weight,
-        evidence: cs.evidence || '',
-      })),
-      reasoning: row.reasoning || '',
-      confidence: row.confidence || undefined,
-      status: row.status || 'pending',
-      comments: row.user_comment || '',
-      resumeUrl,
-    };
-  });
+  return (data || []).map((row, index) => mapCandidateRow(row as Record<string, unknown>, index + 1));
 }
 
 // ─── Screen 3: Update Candidate ──────────────────────────────────────────────
@@ -447,4 +452,86 @@ export async function rescoreProject(projectId: string, rubric: import('./types'
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Failed to rescore candidates');
   return data;
+}
+
+// ─── Criterion Feedback (G15 — granular feedback) ────────────────────────────
+
+/**
+ * Upsert a thumbs-up or thumbs-down on a specific criterion score.
+ * Requires the criterion_feedback table (see database/criterion_feedback.sql).
+ * Fails silently — never blocks the main review flow.
+ */
+export async function submitCriterionFeedback(
+  candidateId: string,
+  criterionName: string,
+  projectId: string,
+  direction: 'up' | 'down'
+) {
+  const { error } = await supabase
+    .from('criterion_feedback')
+    .upsert(
+      { candidate_id: candidateId, criterion_name: criterionName, project_id: projectId, direction },
+      { onConflict: 'candidate_id,criterion_name' }
+    );
+  if (error) console.warn('Failed to save criterion feedback (table may not exist yet):', error.message);
+}
+
+/**
+ * Fetch all criterion feedback for a project, returned as a lookup map.
+ * Key: `${candidateId}_${criterionName}` → direction ('up' | 'down')
+ */
+export async function fetchCriterionFeedback(
+  projectId: string
+): Promise<Record<string, 'up' | 'down'>> {
+  const { data, error } = await supabase
+    .from('criterion_feedback')
+    .select('candidate_id, criterion_name, direction')
+    .eq('project_id', projectId);
+
+  if (error || !data) return {};
+  return Object.fromEntries(
+    data.map(row => [`${row.candidate_id}_${row.criterion_name}`, row.direction as 'up' | 'down'])
+  );
+}
+
+// ─── Override Pattern Insights (G13 — learn from behavior) ───────────────────
+
+/**
+ * Analyse candidate_overrides for a project and surface a plain-English insight
+ * when there are enough overrides (≥5) to show a meaningful pattern.
+ * Returns null when there is insufficient data.
+ */
+export async function fetchOverrideInsights(
+  projectId: string
+): Promise<{ total: number; message: string } | null> {
+  const { data, error } = await supabase
+    .from('candidate_overrides')
+    .select('ai_rank, previous_status, new_status')
+    .eq('project_id', projectId);
+
+  if (error || !data || data.length < 5) return null;
+
+  const total = data.length;
+
+  // Uplifts: recruiter promoted a candidate (moved to shortlisted from a lower status)
+  const uplifts = data.filter(r =>
+    r.new_status === 'shortlisted' && ['pending', 'hold', 'rejected'].includes(r.previous_status)
+  ).length;
+
+  // Downgrades: recruiter demoted a candidate (moved to rejected/hold from shortlisted/pending)
+  const downgrades = data.filter(r =>
+    ['rejected', 'hold'].includes(r.new_status) && ['shortlisted', 'pending'].includes(r.previous_status)
+  ).length;
+
+  let message = `You've manually changed ${total} AI ranking${total !== 1 ? 's' : ''}.`;
+
+  if (uplifts > downgrades * 1.5 && uplifts >= 3) {
+    message += ' You tend to promote candidates the AI ranked lower — consider adjusting your rubric weights to better reflect your priorities.';
+  } else if (downgrades > uplifts * 1.5 && downgrades >= 3) {
+    message += ' You tend to reject candidates the AI ranked highly — consider adding stricter criteria to your scorecard.';
+  } else {
+    message += ' Your decisions and the AI\'s ranking are broadly aligned.';
+  }
+
+  return { total, message };
 }

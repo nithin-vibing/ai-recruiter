@@ -24,6 +24,7 @@ interface RubricTableProps {
   onApprove: () => void;
   approveLabel?: string;
   isLoading?: boolean;
+  animateIn?: boolean;
 }
 
 // Largest remainder method: guarantees displayed integer percentages always sum to exactly 100
@@ -44,7 +45,7 @@ function getDisplayWeights(rubric: RubricCriterion[]): number[] {
   return result;
 }
 
-export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve scorecard & continue', isLoading = false }: RubricTableProps) {
+export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve scorecard & continue', isLoading = false, animateIn = false }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
   // Raw string values while user is mid-edit — avoids LRM recompute fighting the keyboard
   const [weightInputValues, setWeightInputValues] = useState<{ [id: string]: string }>({});
@@ -143,7 +144,11 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove,
             </TableHeader>
             <TableBody>
               {localRubric.map((criterion, index) => (
-                <TableRow key={criterion.id} className="h-14">
+                <TableRow
+                  key={criterion.id}
+                  className={cn('h-14', animateIn && 'animate-fade-in-row')}
+                  style={animateIn ? { animationDelay: `${Math.min(index, 7) * 100}ms` } : undefined}
+                >
                   <TableCell className="py-2">
                     <Input
                       value={criterion.name}
