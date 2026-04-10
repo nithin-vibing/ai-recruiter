@@ -16,7 +16,7 @@ import {
   rescoreProject,
   fetchOverrideInsights,
 } from '@/lib/api-client';
-import { Plus, SlidersHorizontal, ChevronUp, EyeOff, Eye, TrendingUp, X as XIcon } from 'lucide-react';
+import { Plus, SlidersHorizontal, ChevronUp, TrendingUp, X as XIcon } from 'lucide-react';
 import type { CandidateStatus, RubricCriterion } from '@/lib/types';
 
 export default function ResultsPage() {
@@ -35,7 +35,6 @@ export default function ResultsPage() {
   const [originalRubric, setOriginalRubric] = useState<RubricCriterion[]>([]);
   const [isRescoring, setIsRescoring] = useState(false);
   const [rescoreError, setRescoreError] = useState<string | null>(null);
-  const [blindMode, setBlindMode] = useState(false);
   const [overrideInsight, setOverrideInsight] = useState<{ total: number; message: string } | null>(null);
   const [insightDismissed, setInsightDismissed] = useState(false);
 
@@ -170,14 +169,6 @@ export default function ResultsPage() {
         <div className="flex items-center gap-2">
           <StepIndicator currentStep={3} />
           <Button
-            variant={blindMode ? 'default' : 'outline'}
-            onClick={() => setBlindMode(b => !b)}
-            title="Hide AI scores to review resumes without anchoring bias"
-          >
-            {blindMode ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-            {blindMode ? 'Show scores' : 'Blind review'}
-          </Button>
-          <Button
             variant="outline"
             onClick={() => {
               setShowRubricEditor(prev => !prev);
@@ -190,10 +181,6 @@ export default function ResultsPage() {
               <SlidersHorizontal className="h-4 w-4" />
             )}
             {showRubricEditor ? 'Hide scorecard' : 'Edit scorecard & re-rank'}
-          </Button>
-          <Button variant="outline" onClick={handleNewProject}>
-            <Plus className="h-4 w-4" />
-            New Project
           </Button>
         </div>
       </div>
@@ -245,7 +232,6 @@ export default function ResultsPage() {
         onStatusChange={handleStatusChange}
         onCommentsChange={handleCommentsChange}
         previewCandidates={previewCandidates}
-        blindMode={blindMode}
       />
     </div>
   );

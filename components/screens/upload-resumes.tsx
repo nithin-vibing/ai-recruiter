@@ -319,7 +319,7 @@ export function UploadResumes({
               <div className="flex items-start gap-2 rounded-lg bg-electric-blue/5 border border-electric-blue/20 px-3 py-2">
                 <Info className="h-4 w-4 text-electric-blue mt-0.5 shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  Screening runs in the background — <span className="text-foreground font-medium">safe to close this tab</span>. You&apos;ll get a browser notification when results are ready.
+                  Candidates will appear here as they&apos;re scored — results build up in real time.
                 </p>
               </div>
             </div>

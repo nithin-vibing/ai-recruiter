@@ -224,9 +224,6 @@ export function ResultsTable({
   previewCandidates,
   blindMode = false,
 }: ResultsTableProps) {
-  const [disclaimerDismissed, setDisclaimerDismissed] = useState(() =>
-    typeof window !== 'undefined' && localStorage.getItem('ai-disclaimer-dismissed') === 'true'
-  );
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -412,23 +409,6 @@ export function ResultsTable({
 
   return (
     <div className="space-y-4">
-      {/* ── AI disclaimer ── */}
-      {!disclaimerDismissed && (
-        <div className="flex items-start gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          <Info className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>AI scores are a starting point. Screening models can reflect biases in job descriptions — apply your own judgment before making hiring decisions.</span>
-          <button
-            onClick={() => {
-              setDisclaimerDismissed(true);
-              localStorage.setItem('ai-disclaimer-dismissed', 'true');
-            }}
-            className="ml-auto shrink-0 rounded p-0.5 hover:bg-muted transition-colors"
-            aria-label="Dismiss"
-          >
-            <XIcon className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
       {/* ── Top bar: Project info + stats + export ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
