@@ -28,7 +28,7 @@ interface ProjectWithCounts {
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
-  rubric_review: { label: 'Rubric Review', className: 'bg-warning/10 text-warning border-warning/20' },
+  rubric_review: { label: 'Scorecard review', className: 'bg-warning/10 text-warning border-warning/20' },
   screening: { label: 'Screening', className: 'bg-electric-blue/10 text-electric-blue border-electric-blue/20' },
   complete: { label: 'Complete', className: 'bg-success/10 text-success border-success/20' },
 };
@@ -132,7 +132,7 @@ export default function ProjectsPage() {
             Past Projects
           </h1>
           <p className="mt-1 text-muted-foreground">
-            View and manage your previous recruitment evaluations
+            Your past hiring projects
           </p>
         </div>
         <Button asChild className="bg-electric-blue hover:bg-deep-blue">

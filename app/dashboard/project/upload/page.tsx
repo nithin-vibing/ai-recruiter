@@ -232,7 +232,7 @@ export default function UploadResumesPage() {
               onClick={() => router.push('/dashboard/project/create')}
             >
               <ChevronLeft className="h-4 w-4" />
-              Back to Rubric
+              Back to scorecard
             </Button>
           )}
           <StepIndicator currentStep={2} />
@@ -245,7 +245,7 @@ export default function UploadResumesPage() {
           <CardContent className="p-6 text-center space-y-3">
             <p className="font-display text-lg font-bold text-foreground">No project found</p>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              You need to create a project and approve a rubric before uploading resumes.
+              Create a project and approve a scorecard first.
             </p>
             <Button
               className="bg-electric-blue hover:bg-deep-blue"

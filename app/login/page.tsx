@@ -112,7 +112,7 @@ export default function LoginPage() {
               Screen hundreds of resumes in minutes
             </h1>
             <p className="text-lg text-white/60 leading-relaxed">
-              AI scores every candidate against your custom rubric.
+              AI scores every candidate against your custom scorecard.
               No more manual screening — just upload, review, and shortlist.
             </p>
           </div>

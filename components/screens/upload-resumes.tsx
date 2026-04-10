@@ -125,7 +125,7 @@ export function UploadResumes({
                 <CardTitle className="font-display text-xl">Upload Resumes</CardTitle>
                 <CardDescription className="mt-1">
                   {mode === 'pdfs'
-                    ? 'Drop individual PDF or TXT resume files. AI will score each one against your approved rubric.'
+                    ? 'Drop individual PDF or TXT resume files. AI scores each one against your approved scorecard.'
                     : 'Upload a .zip archive containing PDF or TXT resume files.'}
                 </CardDescription>
               </div>
@@ -186,7 +186,7 @@ export function UploadResumes({
       {hasFiles && !isScreening && !isComplete && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-display text-xl">Ready to Screen</CardTitle>
+            <CardTitle className="font-display text-xl">Ready to screen</CardTitle>
             <CardDescription>Review your files and screening options, then start.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">

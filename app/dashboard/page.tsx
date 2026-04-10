@@ -22,7 +22,7 @@ interface RecentProject {
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
-  rubric_review: { label: 'Rubric Review', className: 'bg-warning/10 text-warning border-warning/20' },
+  rubric_review: { label: 'Scorecard review', className: 'bg-warning/10 text-warning border-warning/20' },
   screening: { label: 'Screening', className: 'bg-electric-blue/10 text-electric-blue border-electric-blue/20' },
   complete: { label: 'Complete', className: 'bg-success/10 text-success border-success/20' },
 };
@@ -161,7 +161,7 @@ export default function DashboardPage() {
             , not days.
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            AI screens every resume against your custom rubric — you decide who makes the cut.
+            AI scores every resume against your scorecard — you decide who makes the cut.
           </p>
         </div>
         <Button
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                 <span className="ml-auto font-display text-[1.6rem] font-extrabold text-muted-foreground/50 leading-none">1</span>
               </div>
               <p className="text-[0.82rem] text-muted-foreground leading-relaxed">
-                Paste the JD.<br />AI builds the rubric. Edit or Approve.
+                Paste the job description.<br />AI builds the scorecard. Edit or approve.
               </p>
               <div className="mt-1 text-[0.78rem] font-semibold text-electric-blue flex items-center gap-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
                 Get started <ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-[3px]" />
@@ -239,7 +239,7 @@ export default function DashboardPage() {
           <div className="rounded-[14px] border-2 border-dashed border-electric-blue/25 bg-electric-blue/3 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <p className="font-display font-bold text-foreground">Screen your first batch of resumes</p>
-              <p className="text-sm text-muted-foreground">Paste a job description → AI builds a rubric → upload resumes → shortlist in minutes.</p>
+              <p className="text-sm text-muted-foreground">Paste a job description → AI builds a scorecard → upload resumes → shortlist in minutes.</p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <Link
@@ -247,7 +247,7 @@ export default function DashboardPage() {
                 className="text-sm font-medium text-electric-blue hover:underline flex items-center gap-1"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Try with sample JD
+                Try a sample
               </Link>
               <Button asChild className="bg-electric-blue hover:bg-deep-blue gap-1.5">
                 <Link href="/dashboard/project/create">

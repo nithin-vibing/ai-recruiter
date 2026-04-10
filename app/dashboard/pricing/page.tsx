@@ -13,7 +13,7 @@ const FREE_FEATURES = [
   '3 projects per month',
   '100 resumes per month',
   'AI-powered scoring',
-  'Rubric generation',
+  'Scorecard generation',
   'PDF resume viewing',
   'CSV export',
 ];

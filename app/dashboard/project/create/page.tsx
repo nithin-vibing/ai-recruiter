@@ -147,7 +147,7 @@ function CreateProjectPageContent() {
             Create New Project
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Define the job role and generate a screening rubric
+            Define the role and generate a scorecard
           </p>
         </div>
         <StepIndicator currentStep={1} />
@@ -218,7 +218,7 @@ function CreateProjectPageContent() {
             {isDemo && (
               <div className="flex items-center gap-2 rounded-lg border border-electric-blue/30 bg-electric-blue/5 px-4 py-2.5 text-sm">
                 <Sparkles className="h-4 w-4 text-electric-blue shrink-0" />
-                <span className="text-muted-foreground">Pre-filled with a sample Frontend Engineer JD — feel free to edit or replace it.</span>
+                <span className="text-muted-foreground">Pre-filled with a sample Frontend Engineer job description — feel free to edit or replace it.</span>
               </div>
             )}
             <CreateProjectForm

@@ -27,7 +27,7 @@ export async function generateRubric(data: GenerateRubricPayload) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to generate rubric: ${response.statusText}`);
+    throw new Error(`Failed to generate scorecard: ${response.statusText}`);
   }
 
   return response.json();

@@ -107,7 +107,7 @@ export default function ResultsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-8">
         <div className="text-center">
-          <h2 className="font-display text-xl font-semibold">No Results Yet</h2>
+          <h2 className="font-display text-xl font-semibold">No results yet</h2>
           <p className="mt-2 text-muted-foreground">
             Start a new project to screen candidates
           </p>
@@ -149,7 +149,7 @@ export default function ResultsPage() {
             ) : (
               <SlidersHorizontal className="h-4 w-4" />
             )}
-            {showRubricEditor ? 'Hide Rubric' : 'Edit Rubric & Re-rank'}
+            {showRubricEditor ? 'Hide scorecard' : 'Edit scorecard & re-rank'}
           </Button>
           <Button variant="outline" onClick={handleNewProject}>
             <Plus className="h-4 w-4" />

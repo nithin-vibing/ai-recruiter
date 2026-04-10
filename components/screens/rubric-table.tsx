@@ -44,7 +44,7 @@ function getDisplayWeights(rubric: RubricCriterion[]): number[] {
   return result;
 }
 
-export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve Rubric & Continue', isLoading = false }: RubricTableProps) {
+export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove, approveLabel = 'Approve scorecard & continue', isLoading = false }: RubricTableProps) {
   const [localRubric, setLocalRubric] = useState<RubricCriterion[]>(rubric);
   // Raw string values while user is mid-edit — avoids LRM recompute fighting the keyboard
   const [weightInputValues, setWeightInputValues] = useState<{ [id: string]: string }>({});
@@ -108,7 +108,7 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove,
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="font-display text-xl">Screening Rubric</CardTitle>
+            <CardTitle className="font-display text-xl">Your scorecard</CardTitle>
             <CardDescription>
               Review and customize the scoring criteria. Weights must sum to 100%.
             </CardDescription>
