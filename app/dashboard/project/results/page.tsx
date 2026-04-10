@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ResultsTable } from '@/components/screens/results-table';
 import { RubricTable } from '@/components/screens/rubric-table';
@@ -16,8 +16,30 @@ import {
   rescoreProject,
   fetchOverrideInsights,
 } from '@/lib/api-client';
+import { toast } from 'sonner';
 import { Plus, SlidersHorizontal, ChevronUp, TrendingUp, X as XIcon } from 'lucide-react';
-import type { CandidateStatus, RubricCriterion } from '@/lib/types';
+import type { CandidateStatus, RubricCriterion, ScreeningProgress } from '@/lib/types';
+
+function ScreeningBanner({ progress }: { progress: ScreeningProgress }) {
+  const pct = progress.total > 0
+    ? Math.min(100, (progress.current / progress.total) * 100)
+    : null;
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-electric-blue/20 bg-electric-blue/5 px-4 py-2.5 text-sm">
+      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full bg-electric-blue transition-all duration-500 ${pct === null ? 'animate-pulse w-full opacity-50' : ''}`}
+          style={pct !== null ? { width: `${pct}%` } : undefined}
+        />
+      </div>
+      <span className="text-muted-foreground tabular-nums shrink-0">
+        {progress.total > 0
+          ? `${progress.current} of ${progress.total} scored`
+          : `${progress.current} scored`}
+      </span>
+    </div>
+  );
+}
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -25,10 +47,24 @@ export default function ResultsPage() {
     currentProject,
     candidates,
     setCandidates,
+    screeningProgress,
     updateCandidateStatus,
     updateCandidateComments,
     resetProject,
   } = useProject();
+
+  // Fire toast exactly once when screening transitions to complete
+  const wasCompleteRef = useRef(false);
+  useEffect(() => {
+    if (screeningProgress?.isComplete && !wasCompleteRef.current) {
+      wasCompleteRef.current = true;
+      const count = candidates.length;
+      toast.success(
+        `Screening complete — ${count} candidate${count !== 1 ? 's' : ''} ranked.`,
+        { duration: 5000 },
+      );
+    }
+  }, [screeningProgress?.isComplete, candidates.length]);
 
   const [showRubricEditor, setShowRubricEditor] = useState(false);
   const [rubric, setRubric] = useState<RubricCriterion[]>([]);
@@ -135,6 +171,28 @@ export default function ResultsPage() {
   };
 
   if (!candidates || candidates.length === 0) {
+    // Screening just started — show skeleton rows so the page isn't blank
+    if (screeningProgress && !screeningProgress.isComplete) {
+      return (
+        <div className="p-4 sm:p-8">
+          <div className="mb-5">
+            <h1 className="font-display text-2xl font-bold text-foreground">Screening Results</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Scoring your candidates now — first results appear below shortly</p>
+          </div>
+          <ScreeningBanner progress={screeningProgress} />
+          <div className="mt-5 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="h-14 rounded-lg bg-muted animate-pulse"
+                style={{ opacity: 1 - i * 0.15 }}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-8">
         <div className="text-center">
@@ -184,6 +242,13 @@ export default function ResultsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Screening in-progress banner — visible until complete */}
+      {screeningProgress && !screeningProgress.isComplete && (
+        <div className="mb-5">
+          <ScreeningBanner progress={screeningProgress} />
+        </div>
+      )}
 
       {/* Rubric Editor */}
       {showRubricEditor && (

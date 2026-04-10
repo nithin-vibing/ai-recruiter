@@ -1,34 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadResumes } from '@/components/screens/upload-resumes';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { startScreening, subscribeToScreeningProgress, fetchCandidates, canScreenResumes, incrementResumeCount, mapCandidateRow } from '@/lib/api-client';
+import { canScreenResumes } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, ArrowLeft, Zap, ChevronLeft } from 'lucide-react';
 import type { PercentileThreshold } from '@/lib/types';
-
-/** Request browser notification permission — called once when screening starts. */
-async function requestNotificationPermission(): Promise<boolean> {
-  if (!('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
-  if (Notification.permission === 'denied') return false;
-  const result = await Notification.requestPermission();
-  return result === 'granted';
-}
-
-/** Fire a browser push notification (works even when tab is in background). */
-function sendBrowserNotification(title: string, body: string) {
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/icon.svg' });
-  }
-}
 
 export default function UploadResumesPage() {
   const router = useRouter();
@@ -36,35 +19,22 @@ export default function UploadResumesPage() {
   const {
     currentProject,
     setPercentileThreshold,
-    setCandidates,
     screeningProgress,
-    setScreeningProgress,
     setCurrentStep,
+    beginScreening,
   } = useProject();
 
   const [threshold, setThreshold] = useState<PercentileThreshold>(
     (currentProject?.percentileThreshold as PercentileThreshold) || 25
   );
-  const [isScreening, setIsScreening] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [limitInfo, setLimitInfo] = useState<{ current: number; limit: number } | null>(null);
   const [noProject, setNoProject] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const totalFilesRef = useRef<number>(0);
-  // Accumulates candidates as they arrive via realtime — used by the INSERT handler.
-  const liveCandidatesRef = useRef<import('@/lib/types').Candidate[]>([]);
 
   const handleThresholdChange = (newThreshold: PercentileThreshold) => {
     setThreshold(newThreshold);
     setPercentileThreshold(newThreshold);
   };
-
-  // Clean up polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, []);
 
   const handleStartScreening = async (files: File[], percentile: PercentileThreshold) => {
     const projectId = localStorage.getItem('currentProjectId');
@@ -88,123 +58,16 @@ export default function UploadResumesPage() {
     }
 
     setPercentileThreshold(percentile);
-    setIsScreening(true);
 
-    // Ask for browser notification permission now (requires user gesture)
-    requestNotificationPermission();
-
-    // Set initial progress
-    setScreeningProgress({
-      current: 0,
-      total: 0,
-      isComplete: false,
-    });
-
-    // Subscribe to real-time updates — each candidate INSERT fires this.
-    // We accumulate candidates progressively so the results page can start
-    // populating before screening is complete, eliminating the blank-wait.
-    liveCandidatesRef.current = [];
-    const unsubscribe = subscribeToScreeningProgress(projectId, (raw) => {
-      const incoming = mapCandidateRow(raw, 0); // rank assigned below after sort
-      // Deduplicate in case of reconnection replays
-      if (liveCandidatesRef.current.some(c => c.id === incoming.id)) return;
-      const updated = [...liveCandidatesRef.current, incoming]
-        .sort((a, b) => b.totalScore - a.totalScore)
-        .map((c, i) => ({ ...c, rank: i + 1 }));
-      liveCandidatesRef.current = updated;
-      setCandidates(updated);
-      setScreeningProgress({
-        current: updated.length,
-        total: totalFilesRef.current || updated.length,
-        isComplete: false,
-      });
-    });
-
-    // Start polling for candidates count every 3 seconds
-    pollingRef.current = setInterval(async () => {
-      try {
-        const { count } = await supabase
-          .from('candidates')
-          .select('*', { count: 'exact', head: true })
-          .eq('project_id', projectId);
-
-        const currentCount = count || 0;
-
-        // Check if project status is complete
-        const { data: project } = await supabase
-          .from('projects')
-          .select('status')
-          .eq('id', projectId)
-          .single();
-
-        setScreeningProgress({
-          current: currentCount,
-          total: totalFilesRef.current || currentCount,
-          isComplete: project?.status === 'complete',
-        });
-
-        if (project?.status === 'complete') {
-          // Stop polling
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          unsubscribe();
-
-          // Fetch all candidates
-          const candidates = await fetchCandidates(projectId);
-          setCandidates(candidates);
-
-          // Notify — browser push if tab is backgrounded, toast always
-          const candidateCount = candidates.length;
-          toast.success(`Screening complete! ${candidateCount} candidate${candidateCount !== 1 ? 's' : ''} ranked.`, {
-            duration: 5000,
-            action: { label: 'View Results', onClick: () => router.push('/dashboard/project/results') },
-          });
-          sendBrowserNotification(
-            'Screening complete ✓',
-            `${candidateCount} candidate${candidateCount !== 1 ? 's' : ''} have been scored and ranked.`
-          );
-
-          // Track resume usage
-          if (user?.id && candidates.length > 0) {
-            incrementResumeCount(user.id, candidates.length).catch((err) =>
-              console.warn('Failed to track resume usage:', err)
-            );
-          }
-
-          setScreeningProgress({
-            current: candidates.length,
-            total: candidates.length,
-            isComplete: true,
-          });
-
-          // Wait to show completion state
-          await new Promise(resolve => setTimeout(resolve, 1500));
-
-          setCurrentStep(3);
-          router.push('/dashboard/project/results');
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }, 3000);
-
-    // Fire the screening request — don't await it (it takes minutes)
-    // The API route may timeout, but n8n will keep processing.
-    // onExtractionProgress fires during client-side PDF extraction and gives us
-    // the total file count so the progress bar has a real denominator.
-    // If user uploaded individual PDFs, pass the array; if ZIP, pass the single file
     const screeningInput = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')
       ? files[0]
       : files;
 
-    startScreening(
+    // Hand off to context — polling + realtime survive page navigation
+    beginScreening(
       projectId,
       screeningInput,
-      (_current, total) => {
-        if (total > 0 && totalFilesRef.current === 0) {
-          totalFilesRef.current = total;
-          setScreeningProgress({ current: screeningProgress?.current ?? 0, total, isComplete: false });
-        }
-      },
+      user?.id,
       (failedFiles) => {
         const count = failedFiles.length;
         const label = count === 1 ? `1 file` : `${count} files`;
@@ -214,12 +77,12 @@ export default function UploadResumesPage() {
             : `${failedFiles.slice(0, 3).join(', ')} and ${failedFiles.length - 3} more. These are likely scanned or image-only PDFs.`,
           duration: 8000,
         });
-      }
-    ).catch((error) => {
-      console.log('Screening request completed or timed out:', error?.message || 'done');
-      // This is expected — Vercel functions timeout after 10-60s
-      // n8n continues processing regardless
-    });
+      },
+    );
+
+    // Navigate immediately — user watches candidates stream in on the results page
+    setCurrentStep(3);
+    router.push('/dashboard/project/results');
   };
 
   return (
