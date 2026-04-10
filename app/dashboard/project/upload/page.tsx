@@ -104,7 +104,7 @@ export default function UploadResumesPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {currentProject?.name && !isScreening && (
+          {currentProject?.name && (
             <Button
               variant="ghost"
               size="sm"
