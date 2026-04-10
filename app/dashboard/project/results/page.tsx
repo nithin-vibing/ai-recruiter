@@ -177,7 +177,7 @@ export default function ResultsPage() {
         <div className="p-4 sm:p-8">
           <div className="mb-5">
             <h1 className="font-display text-2xl font-bold text-foreground">Screening Results</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Scoring your candidates now — first results appear below shortly</p>
+            <p className="mt-1 text-sm text-muted-foreground">Hang tight — your shortlist is being built, one resume at a time.</p>
           </div>
           <ScreeningBanner progress={screeningProgress} />
           <div className="mt-5 space-y-3">
