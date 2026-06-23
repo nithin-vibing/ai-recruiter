@@ -107,7 +107,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     totalFilesRef.current = 0;
     liveCandidatesRef.current = [];
 
-    setScreeningProgress({ current: 0, total: 0, isComplete: false });
+    setScreeningProgress({ current: 0, total: 0, failed: 0, isComplete: false });
 
     // Realtime: each INSERT fires as a candidate finishes scoring
     const unsubscribe = subscribeToScreeningProgress(projectId, (raw) => {
@@ -121,28 +121,42 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       setScreeningProgress({
         current: updated.length,
         total: totalFilesRef.current || updated.length,
+        failed: 0,
         isComplete: false,
       });
     });
     unsubscribeRef.current = unsubscribe;
 
-    // Polling: checks project status for completion every 3s
+    // Polling: checks scored/failed counts and project completion every 2s
     pollingRef.current = setInterval(async () => {
       try {
-        const { count } = await supabase
-          .from('candidates')
-          .select('*', { count: 'exact', head: true })
-          .eq('project_id', projectId);
+        const [{ count: scoredCount }, { count: failedCount }, { data: project }] = await Promise.all([
+          supabase
+            .from('candidates')
+            .select('*', { count: 'exact', head: true })
+            .eq('project_id', projectId)
+            .eq('screening_status', 'scored'),
+          supabase
+            .from('candidates')
+            .select('*', { count: 'exact', head: true })
+            .eq('project_id', projectId)
+            .eq('screening_status', 'failed'),
+          supabase
+            .from('projects')
+            .select('status')
+            .eq('id', projectId)
+            .single(),
+        ]);
 
-        const { data: project } = await supabase
-          .from('projects')
-          .select('status')
-          .eq('id', projectId)
-          .single();
+        const scored = scoredCount || 0;
+        const failed = failedCount || 0;
+        const completed = scored + failed;
+        const total = totalFilesRef.current || completed;
 
         setScreeningProgress({
-          current: count || 0,
-          total: totalFilesRef.current || count || 0,
+          current: completed,
+          total,
+          failed,
           isComplete: project?.status === 'complete',
         });
 
@@ -156,6 +170,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           setScreeningProgress({
             current: allCandidates.length,
             total: allCandidates.length,
+            failed,
             isComplete: true,
           });
 
@@ -166,7 +181,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('Polling error:', err);
       }
-    }, 3000);
+    }, 2000);
 
     // Fire the n8n screening request — don't await (takes minutes; Vercel will timeout)
     startScreening(
@@ -178,6 +193,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           setScreeningProgress(prev => ({
             current: prev?.current ?? 0,
             total,
+            failed: prev?.failed ?? 0,
             isComplete: false,
           }));
         }

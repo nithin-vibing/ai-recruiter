@@ -1,0 +1,23 @@
+Senior Frontend Engineer — Consumer Fintech
+
+We're building a consumer fintech app and need a Senior Frontend Engineer to lead our web platform.
+
+Responsibilities:
+- Architect and build complex React components and systems
+- Lead technical decisions for frontend architecture
+- Collaborate closely with design and product teams
+- Mentor junior engineers and conduct code reviews
+- Drive performance optimization and accessibility improvements
+
+Requirements:
+- 4+ years of production React experience
+- Strong TypeScript skills
+- Experience with Next.js or similar SSR frameworks
+- Track record of shipping high-quality UI at scale
+- Experience building or maintaining design systems
+
+Nice to have:
+- Startup experience (Series A–C)
+- Familiarity with Tailwind CSS or utility-first CSS
+- Open-source contributions
+- Experience with testing frameworks (Jest, Playwright, Cypress)

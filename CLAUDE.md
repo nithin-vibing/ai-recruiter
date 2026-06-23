@@ -18,7 +18,7 @@ No test framework is configured.
 
 ## Architecture
 
-**Stack:** Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage) + n8n (AI workflows) + Tailwind v4 + shadcn/ui
+**Stack:** Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage) + Anthropic SDK (Claude Sonnet + Haiku) + Tailwind v4 + shadcn/ui
 
 ### Three-Step Wizard Flow
 
@@ -29,11 +29,17 @@ No test framework is configured.
 ### Data Flow
 
 ```
-Browser → Next.js API Routes (/api/*) → n8n webhooks (AI scoring)
+Browser → Next.js API Routes (/api/*) → Anthropic SDK (Claude)
 Browser → Supabase SDK (auth, CRUD, storage, realtime)
 ```
 
-API routes at `app/api/generate-rubric/route.ts` and `app/api/screen-resume/route.ts` are thin proxies to n8n webhooks to avoid CORS. The n8n instance is at `ainkv.app.n8n.cloud`.
+All AI calls go through `@anthropic-ai/sdk` directly from API routes. No third-party workflow engine. Prompts live in `lib/prompts/` as typed functions.
+
+**Model selection:**
+- `generate-rubric` → `claude-sonnet-4-6` (one-time reasoning task)
+- `screen-resume` + `rescore` → `claude-haiku-4-5-20251001` (repetitive scoring at scale)
+
+**Screening pattern:** `screen-resume` responds immediately with `{ queued: N }` and scores resumes in the background (5 concurrent). Client polls Supabase every 2s for progress via `screening_status` on the `candidates` table.
 
 ### State Management
 

@@ -524,6 +524,27 @@ export function ResultsTable({
                 </Button>
               )}
             </div>
+            {!blindMode && candidates.length > 0 && (() => {
+              const scored = candidates.filter(c => c.totalScore > 0 || c.scores.length > 0);
+              const high = scored.filter(c => c.totalScore >= 75).length;
+              const mid = scored.filter(c => c.totalScore >= 45 && c.totalScore < 75).length;
+              const low = scored.filter(c => c.totalScore < 45).length;
+              const total = scored.length || 1;
+              return (
+                <div className="mt-2 space-y-1">
+                  <div className="flex h-1.5 w-full rounded-full overflow-hidden gap-px">
+                    <div className="bg-success transition-all duration-500" style={{ width: `${(high / total) * 100}%` }} />
+                    <div className="bg-electric-blue transition-all duration-500" style={{ width: `${(mid / total) * 100}%` }} />
+                    <div className="bg-muted-foreground/30 transition-all duration-500" style={{ width: `${(low / total) * 100}%` }} />
+                  </div>
+                  <div className="flex gap-3 text-[10px] text-muted-foreground">
+                    <span><span className="text-success font-medium">{high}</span> strong</span>
+                    <span><span className="text-electric-blue font-medium">{mid}</span> mid</span>
+                    <span><span className="font-medium">{low}</span> low</span>
+                  </div>
+                </div>
+              );
+            })()}
           </CardHeader>
 
           {/* Mode banners */}
@@ -555,10 +576,11 @@ export function ResultsTable({
                 <div
                   key={candidate.id}
                   className={cn(
-                    'group flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50',
+                    'group flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-border/50 transition-colors hover:bg-muted/50 min-h-[44px]',
                     selectedCandidate?.id === candidate.id && !compareMode && 'bg-electric-blue/5 border-l-2 border-l-electric-blue',
                     compareIds.includes(candidate.id) && 'bg-electric-blue/5',
                     candidate.confidence === 'low' && !blindMode && 'opacity-75',
+                    candidate.totalScore === 0 && candidate.scores.length === 0 && 'opacity-50',
                   )}
                   onClick={() => {
                     if (compareIds.length > 0) { toggleCompare(candidate.id); return; }
@@ -602,13 +624,19 @@ export function ResultsTable({
                     })()}
                   </div>
                   {!blindMode && (
-                    <span className={cn(
-                      'text-sm tabular-nums px-2 py-0.5 rounded',
-                      getScoreColor(displayScore),
-                      getScoreBg(displayScore)
-                    )}>
-                      {isPreview ? `~${displayScore}` : displayScore}
-                    </span>
+                    candidate.totalScore === 0 && candidate.scores.length === 0 ? (
+                      <span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">
+                        Could not score
+                      </span>
+                    ) : (
+                      <span className={cn(
+                        'text-sm tabular-nums px-2 py-0.5 rounded',
+                        getScoreColor(displayScore),
+                        getScoreBg(displayScore)
+                      )}>
+                        {isPreview ? `~${displayScore}` : displayScore}
+                      </span>
+                    )
                   )}
                 </div>
               );

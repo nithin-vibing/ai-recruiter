@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { Sidebar } from '@/components/layout/sidebar';
 import { ProjectProvider } from '@/lib/project-context';
 import { AuthProvider } from '@/lib/auth-context';

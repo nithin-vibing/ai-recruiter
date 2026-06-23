@@ -1,0 +1,10 @@
+# WEAK RESUME PLACEHOLDER
+
+Replace this with a real weak candidate resume you would reject.
+
+Tips for a good "weak" fixture:
+- < 2 years experience, mostly jQuery or Vue
+- No TypeScript
+- No Next.js or SSR experience
+- No evidence of shipping at scale
+- Mismatch between role requirements and background

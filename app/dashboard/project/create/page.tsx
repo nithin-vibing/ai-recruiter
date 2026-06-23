@@ -6,7 +6,7 @@ import { CreateProjectForm } from '@/components/screens/create-project-form';
 import { RubricTable } from '@/components/screens/rubric-table';
 import { StepIndicator } from '@/components/shared/step-indicator';
 import { useProject } from '@/lib/project-context';
-import { generateRubric, claimProject, canCreateProject, incrementProjectCount } from '@/lib/api-client';
+import { generateRubric, canCreateProject, incrementProjectCount } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent } from '@/components/ui/card';
@@ -104,18 +104,10 @@ function CreateProjectPageContent() {
 
       if (pid) {
         setProjectId(pid);
-        // Claim project first — only count usage if claim succeeds
-        if (user?.id) {
-          try {
-            await claimProject(pid, user.id);
-            incrementProjectCount(user.id).catch((err) =>
-              console.warn('Failed to increment project count:', err)
-            );
-          } catch (err) {
-            console.error('Failed to claim project:', err);
-            toast.error('Project created but could not be linked to your account. Please refresh and try again.');
-          }
-        }
+        // Project is created with user_id already set — just track usage
+        incrementProjectCount(user.id).catch((err) =>
+          console.warn('Failed to increment project count:', err)
+        );
       }
 
       const mappedRubric: RubricCriterion[] = rubricArray.map((row: Record<string, unknown>) => ({

@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/generate-rubric/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/screen-resume/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/rescore/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}

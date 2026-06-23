@@ -48,9 +48,12 @@ export interface Candidate {
   resumeUrl?: string;
 }
 
+export type ScreeningStatus = 'pending' | 'scored' | 'failed';
+
 export interface ScreeningProgress {
-  current: number;
+  current: number;   // scored + failed (completed, regardless of outcome)
   total: number;
+  failed: number;    // how many failed — shown as "Could not score"
   isComplete: boolean;
 }
 

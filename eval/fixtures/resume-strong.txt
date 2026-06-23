@@ -1,0 +1,10 @@
+# STRONG RESUME PLACEHOLDER
+
+Replace this with a real strong candidate resume you would shortlist.
+
+Tips for a good "strong" fixture:
+- 5+ years React/TypeScript in production
+- Built or led a design system
+- Measurable impact (e.g. "reduced bundle size by 40%", "led team of 4 engineers")
+- Next.js experience
+- Startup background

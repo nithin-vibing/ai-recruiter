@@ -1,0 +1,10 @@
+# MEDIUM RESUME PLACEHOLDER
+
+Replace this with a real mid-tier candidate resume you would hold.
+
+Tips for a good "medium" fixture:
+- 3-4 years React experience
+- Some TypeScript but not deep
+- No design system experience
+- Works at established company, not startup
+- No measurable impact metrics

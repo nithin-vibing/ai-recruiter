@@ -302,7 +302,7 @@ export function UploadResumes({
                 <p className="font-display font-semibold text-foreground">Screening in progress</p>
                 <span className="text-sm font-medium text-electric-blue tabular-nums">
                   {screeningProgress.total > 0
-                    ? `${screeningProgress.current} of ${screeningProgress.total} scored`
+                    ? `${screeningProgress.current} / ${screeningProgress.total}`
                     : `${screeningProgress.current} scored`}
                 </span>
               </div>
@@ -316,10 +316,15 @@ export function UploadResumes({
                   <div className="h-full bg-electric-blue/60 rounded-full animate-pulse" style={{ width: '100%' }} />
                 )}
               </div>
+              {screeningProgress.failed > 0 && (
+                <p className="text-xs text-destructive">
+                  {screeningProgress.failed} resume{screeningProgress.failed !== 1 ? 's' : ''} could not be scored — review manually.
+                </p>
+              )}
               <div className="flex items-start gap-2 rounded-lg bg-electric-blue/5 border border-electric-blue/20 px-3 py-2">
                 <Info className="h-4 w-4 text-electric-blue mt-0.5 shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  Candidates will appear here as they&apos;re scored — results build up in real time.
+                  Scoring 5 resumes at a time — results appear as they&apos;re ready.
                 </p>
               </div>
             </div>
@@ -336,7 +341,8 @@ export function UploadResumes({
               <div>
                 <p className="font-display font-semibold text-foreground">Screening complete</p>
                 <p className="text-sm text-muted-foreground">
-                  {screeningProgress?.current ?? 0} candidate{(screeningProgress?.current ?? 0) !== 1 ? 's' : ''} ranked and ready to review.
+                  {(screeningProgress?.current ?? 0) - (screeningProgress?.failed ?? 0)} candidate{((screeningProgress?.current ?? 0) - (screeningProgress?.failed ?? 0)) !== 1 ? 's' : ''} ranked and ready to review
+                  {(screeningProgress?.failed ?? 0) > 0 && ` · ${screeningProgress!.failed} could not be scored`}.
                 </p>
               </div>
             </div>
