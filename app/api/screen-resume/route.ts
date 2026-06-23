@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import Anthropic from '@anthropic-ai/sdk';
 import JSZip from 'jszip';
 import { createClient } from '@/lib/supabase/server';
@@ -168,9 +169,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No readable resumes found in ZIP' }, { status: 400 });
   }
 
-  // Fire scoring in the background — client polls Supabase for progress
-  runScoringInBackground(projectId, resumes, rubric).catch((err) =>
-    console.error('Background scoring error:', err)
+  // Keep the function alive after response using Vercel's waitUntil
+  waitUntil(
+    runScoringInBackground(projectId, resumes, rubric).catch((err) =>
+      console.error('Background scoring error:', err)
+    )
   );
 
   return NextResponse.json({ queued: resumes.length });
