@@ -183,7 +183,7 @@ export function mapCandidateRow(row: Record<string, unknown>, rank: number): Can
       if (!raw) return undefined;
       try {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.strength && parsed.weakness && Array.isArray(parsed.must_haves)) {
+        if (parsed && parsed.strength && parsed.weakness) {
           return parsed as import('./types').AISummary;
         }
       } catch { /* legacy plain-text reasoning */ }
