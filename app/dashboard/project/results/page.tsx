@@ -243,61 +243,84 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Screening in-progress banner — visible until complete */}
+      {/* Screening in-progress banner + loading state */}
       {screeningProgress && !screeningProgress.isComplete && (
-        <div className="mb-5">
+        <div className="space-y-5">
           <ScreeningBanner progress={screeningProgress} />
+          <div className="rounded-xl border bg-card p-6 space-y-4">
+            <div className="space-y-1">
+              <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-64 rounded bg-muted animate-pulse" />
+            </div>
+            <div className="space-y-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3" style={{ opacity: 1 - i * 0.12 }}>
+                  <div className="h-10 w-8 rounded bg-muted animate-pulse shrink-0" />
+                  <div className="h-10 flex-1 rounded bg-muted animate-pulse" />
+                  <div className="h-10 w-20 rounded bg-muted animate-pulse shrink-0" />
+                  <div className="h-10 w-24 rounded bg-muted animate-pulse shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Rubric Editor */}
-      {showRubricEditor && (
-        <div className="mb-6">
-          {rescoreError && (
-            <div className="mb-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {rescoreError}
+      {/* Rubric Editor, insights, results — only shown when screening is complete */}
+      {(!screeningProgress || screeningProgress.isComplete) && (
+        <>
+          {/* Rubric Editor */}
+          {showRubricEditor && (
+            <div className="mb-6">
+              {rescoreError && (
+                <div className="mb-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {rescoreError}
+                </div>
+              )}
+              <RubricTable
+                rubric={rubric}
+                originalRubric={originalRubric}
+                onRubricChange={setRubric}
+                onApprove={handleRerank}
+                approveLabel="Re-rank Candidates"
+                isLoading={isRescoring}
+              />
             </div>
           )}
-          <RubricTable
-            rubric={rubric}
-            originalRubric={originalRubric}
-            onRubricChange={setRubric}
-            onApprove={handleRerank}
-            approveLabel="Re-rank Candidates"
-            isLoading={isRescoring}
-          />
-        </div>
+
+          {/* Override pattern insight card */}
+          {overrideInsight && !insightDismissed && (
+            <div className="flex items-start gap-3 rounded-lg border border-electric-blue/20 bg-electric-blue/5 px-4 py-3 text-sm">
+              <TrendingUp className="h-4 w-4 text-electric-blue shrink-0 mt-0.5" />
+              <p className="flex-1 text-muted-foreground">{overrideInsight.message}</p>
+              <button
+                onClick={() => {
+                  setInsightDismissed(true);
+                  const projectId = localStorage.getItem('currentProjectId');
+                  if (projectId) localStorage.setItem(`insights-dismissed-${projectId}`, 'true');
+                }}
+                className="shrink-0 rounded p-0.5 hover:bg-electric-blue/10 transition-colors text-muted-foreground"
+                aria-label="Dismiss"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Override pattern insight card */}
-      {overrideInsight && !insightDismissed && (
-        <div className="flex items-start gap-3 rounded-lg border border-electric-blue/20 bg-electric-blue/5 px-4 py-3 text-sm">
-          <TrendingUp className="h-4 w-4 text-electric-blue shrink-0 mt-0.5" />
-          <p className="flex-1 text-muted-foreground">{overrideInsight.message}</p>
-          <button
-            onClick={() => {
-              setInsightDismissed(true);
-              const projectId = localStorage.getItem('currentProjectId');
-              if (projectId) localStorage.setItem(`insights-dismissed-${projectId}`, 'true');
-            }}
-            className="shrink-0 rounded p-0.5 hover:bg-electric-blue/10 transition-colors text-muted-foreground"
-            aria-label="Dismiss"
-          >
-            <XIcon className="h-3.5 w-3.5" />
-          </button>
-        </div>
+      {/* Results Table — only when complete */}
+      {(!screeningProgress || screeningProgress.isComplete) && (
+        <ResultsTable
+          candidates={candidates}
+          projectName={currentProject?.name || 'Untitled Project'}
+          roleName={currentProject?.roleName || 'Role'}
+          percentileThreshold={currentProject?.percentileThreshold || 100}
+          onStatusChange={handleStatusChange}
+          onCommentsChange={handleCommentsChange}
+          previewCandidates={previewCandidates}
+        />
       )}
-
-      {/* Results Table */}
-      <ResultsTable
-        candidates={candidates}
-        projectName={currentProject?.name || 'Untitled Project'}
-        roleName={currentProject?.roleName || 'Role'}
-        percentileThreshold={currentProject?.percentileThreshold || 100}
-        onStatusChange={handleStatusChange}
-        onCommentsChange={handleCommentsChange}
-        previewCandidates={previewCandidates}
-      />
     </div>
   );
 }
