@@ -109,7 +109,7 @@ async function uploadResumesToStorage(projectId: string, files: Map<string, Blob
 export function getResumeUrl(projectId: string, filename: string): string {
   const { data } = supabase.storage
     .from('resumes')
-    .getPublicUrl(`${projectId}/${filename}`);
+    .getPublicUrl(`${projectId}/${encodeURIComponent(filename)}`);
   return data.publicUrl;
 }
 
