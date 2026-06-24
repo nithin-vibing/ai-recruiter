@@ -52,7 +52,10 @@ Score this resume against the rubric below. Follow these steps:
 5. Compute total_score as a 0–100 weighted percentage:
    total_score = sum of (score / max_score × weight × 100) for all criteria
    Example: score 8/10 with weight 0.3 → contributes 8/10 × 0.3 × 100 = 24 points
-6. Write a 1-sentence summary (max 20 words): lead with the single strongest qualification, end with the single biggest gap. No filler.
+6. Write a structured AI summary:
+   - strength: 1 crisp sentence on the single strongest reason to interview this person for this specific role
+   - weakness: 1 crisp sentence on the single biggest gap vs. the JD
+   - must_haves: extract 4–6 explicit must-have requirements from the JD, then mark each true/false based on the resume
 </Task>
 
 <Rubric>
@@ -79,7 +82,14 @@ Respond ONLY with this exact JSON — no other text:
     }
   ],
   "total_score": 74.5,
-  "summary": "One sentence: strength + gap, max 20 words.",
+  "summary": {
+    "strength": "One crisp sentence on the strongest reason to hire for this role.",
+    "weakness": "One crisp sentence on the biggest gap vs. the JD.",
+    "must_haves": [
+      { "item": "Requirement from JD", "met": true },
+      { "item": "Another requirement", "met": false }
+    ]
+  },
   "confidence": "high | medium | low"
 }`;
 }

@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { submitCriterionFeedback, fetchCriterionFeedback } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import type { Candidate, CandidateStatus, FilterStatus } from '@/lib/types';
+import type { Candidate, CandidateStatus, FilterStatus, AISummary } from '@/lib/types';
 
 type PreviewCandidate = Candidate & { previewScore: number; previewRank: number };
 
@@ -228,7 +228,7 @@ export function ResultsTable({
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detailTab, setDetailTab] = useState<'reasoning' | 'resume'>('reasoning');
+  const [detailTab, setDetailTab] = useState<'summary' | 'criteria' | 'resume'>('summary');
   const [tempComments, setTempComments] = useState('');
   const [editingComments, setEditingComments] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -276,7 +276,7 @@ export function ResultsTable({
     if (selectedIndex > 0) {
       setSelectedId(displayList[selectedIndex - 1].id);
       setEditingComments(false);
-      setDetailTab('reasoning');
+      setDetailTab('summary');
     }
   };
 
@@ -284,7 +284,7 @@ export function ResultsTable({
     if (selectedIndex < displayList.length - 1) {
       setSelectedId(displayList[selectedIndex + 1].id);
       setEditingComments(false);
-      setDetailTab('reasoning');
+      setDetailTab('summary');
     }
   };
 
@@ -586,7 +586,7 @@ export function ResultsTable({
                     if (compareIds.length > 0) { toggleCompare(candidate.id); return; }
                     setSelectedId(candidate.id);
                     setEditingComments(false);
-                    setDetailTab('reasoning');
+                    setDetailTab('summary');
                   }}
                 >
                   {/* Checkbox: visible on hover or when compare mode active */}
@@ -770,18 +770,24 @@ export function ResultsTable({
 
             {/* Tabs */}
             <div className="flex border-b px-4 shrink-0">
-              <button
-                className={cn(
-                  'px-3 py-1.5 text-sm font-medium border-b-2 transition-colors',
-                  detailTab === 'reasoning'
-                    ? 'border-electric-blue text-electric-blue'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                )}
-                onClick={() => setDetailTab('reasoning')}
-              >
-                <FileText className="h-3.5 w-3.5 inline mr-1.5" />
-                AI Reasoning
-              </button>
+              {(['summary', 'criteria'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  className={cn(
+                    'px-3 py-1.5 text-sm font-medium border-b-2 transition-colors capitalize',
+                    detailTab === tab
+                      ? 'border-electric-blue text-electric-blue'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  )}
+                  onClick={() => setDetailTab(tab)}
+                >
+                  {tab === 'summary' ? (
+                    <><FileText className="h-3.5 w-3.5 inline mr-1.5" />AI Summary</>
+                  ) : (
+                    <><TrendingUp className="h-3.5 w-3.5 inline mr-1.5" />Criteria</>
+                  )}
+                </button>
+              ))}
               {selectedCandidate.resumeUrl && (
                 <a
                   href={selectedCandidate.resumeUrl}
@@ -797,106 +803,140 @@ export function ResultsTable({
 
             {/* Tab content */}
             <div className="flex-1 overflow-hidden p-3 min-h-0">
-              {detailTab === 'reasoning' && blindMode && (
+
+              {/* AI Summary tab */}
+              {detailTab === 'summary' && blindMode && (
                 <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-6">
                   <EyeOff className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">AI reasoning is hidden in blind review mode.</p>
-                  <p className="text-xs text-muted-foreground/60">Toggle off blind review in the header to see scores and reasoning.</p>
+                  <p className="text-sm text-muted-foreground">AI summary is hidden in blind review mode.</p>
+                  <p className="text-xs text-muted-foreground/60">Toggle off blind review in the header to see it.</p>
                 </div>
               )}
-              {detailTab === 'reasoning' && !blindMode && (
-                <div className="h-full flex flex-col overflow-hidden">
-                  {/* Summary strip */}
-                  {selectedCandidate.reasoning && (
-                    <div className="shrink-0 px-1 pb-3 border-b mb-3">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
-                      <p className="text-sm text-foreground leading-snug">
-                        {selectedCandidate.reasoning}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Criteria breakdown — full width, scrollable */}
-                  {selectedCandidate.scores.length > 0 && (
-                    <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Criteria Breakdown</p>
-                      {selectedCandidate.scores.map((s) => {
-                        const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
-                        const feedbackKey = `${selectedCandidate.id}_${s.criterionName}`;
-                        const currentFeedback = feedbackMap[feedbackKey];
-
-                        const handleFeedback = (direction: 'up' | 'down') => {
-                          const projectId = typeof window !== 'undefined' ? localStorage.getItem('currentProjectId') : null;
-                          if (!projectId) return;
-                          const next = currentFeedback === direction ? undefined : direction;
-                          setFeedbackMap(prev => {
-                            const updated = { ...prev };
-                            if (next) updated[feedbackKey] = next;
-                            else delete updated[feedbackKey];
-                            return updated;
-                          });
-                          if (next) {
-                            submitCriterionFeedback(selectedCandidate.id, s.criterionName, projectId, next);
-                          }
-                        };
-
-                        return (
-                          <div
-                            key={s.criterionId}
-                            className="group rounded-md px-2 py-2 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold flex-1 min-w-0">{s.criterionName}</span>
-                              <span className={cn('text-xs tabular-nums font-semibold shrink-0', getScoreColor(ratio * 100))}>
-                                {s.score}/{s.maxScore}
-                              </span>
-                              {/* Thumbs feedback */}
-                              <div className={cn(
-                                'flex items-center gap-0.5 transition-opacity shrink-0',
-                                currentFeedback ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              {detailTab === 'summary' && !blindMode && (
+                <div className="h-full overflow-y-auto space-y-4 pr-1">
+                  {selectedCandidate.aiSummary ? (
+                    <>
+                      {/* Strength */}
+                      <div className="rounded-lg border border-success/20 bg-success/5 px-4 py-3">
+                        <p className="text-xs font-semibold text-success uppercase tracking-wider mb-1">Strength</p>
+                        <p className="text-sm text-foreground leading-snug">{selectedCandidate.aiSummary.strength}</p>
+                      </div>
+                      {/* Weakness */}
+                      <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+                        <p className="text-xs font-semibold text-destructive uppercase tracking-wider mb-1">Weakness</p>
+                        <p className="text-sm text-foreground leading-snug">{selectedCandidate.aiSummary.weakness}</p>
+                      </div>
+                      {/* Must-haves checklist */}
+                      {selectedCandidate.aiSummary.must_haves.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Must-Have Checklist</p>
+                          <div className="space-y-1.5">
+                            {selectedCandidate.aiSummary.must_haves.map((mh, i) => (
+                              <div key={i} className={cn(
+                                'flex items-start gap-2.5 rounded-md px-3 py-2 text-sm',
+                                mh.met ? 'bg-success/5' : 'bg-destructive/5'
                               )}>
-                                <button
-                                  onClick={() => handleFeedback('up')}
-                                  title="Score looks right"
-                                  className={cn(
-                                    'h-5 w-5 rounded flex items-center justify-center transition-colors',
-                                    currentFeedback === 'up'
-                                      ? 'text-success bg-success/10'
-                                      : 'text-muted-foreground hover:text-success hover:bg-success/10'
-                                  )}
-                                >
-                                  <ThumbsUp className="h-3 w-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleFeedback('down')}
-                                  title="Score seems off"
-                                  className={cn(
-                                    'h-5 w-5 rounded flex items-center justify-center transition-colors',
-                                    currentFeedback === 'down'
-                                      ? 'text-destructive bg-destructive/10'
-                                      : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
-                                  )}
-                                >
-                                  <ThumbsDown className="h-3 w-3" />
-                                </button>
+                                <span className={cn('mt-0.5 shrink-0 text-base leading-none', mh.met ? 'text-success' : 'text-destructive')}>
+                                  {mh.met ? '✓' : '✗'}
+                                </span>
+                                <span className={mh.met ? 'text-foreground' : 'text-muted-foreground'}>{mh.item}</span>
                               </div>
-                            </div>
-                            <div className="mt-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
-                                style={{ width: `${ratio * 100}%` }}
-                              />
-                            </div>
-                            {s.evidence && (
-                              <p className="mt-1.5 text-xs text-muted-foreground italic leading-snug">
-                                &ldquo;{s.evidence}&rdquo;
-                              </p>
-                            )}
+                            ))}
                           </div>
-                        );
-                      })}
+                        </div>
+                      )}
+                    </>
+                  ) : selectedCandidate.reasoning ? (
+                    /* Legacy plain-text reasoning */
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Summary</p>
+                      <p className="text-sm text-foreground leading-snug">{selectedCandidate.reasoning}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
+                      <p className="text-sm text-muted-foreground">No summary available.</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Criteria tab */}
+              {detailTab === 'criteria' && (
+                <div className="h-full overflow-y-auto space-y-2 min-h-0">
+                  {selectedCandidate.scores.map((s) => {
+                    const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
+                    const feedbackKey = `${selectedCandidate.id}_${s.criterionName}`;
+                    const currentFeedback = feedbackMap[feedbackKey];
+
+                    const handleFeedback = (direction: 'up' | 'down') => {
+                      const projectId = typeof window !== 'undefined' ? localStorage.getItem('currentProjectId') : null;
+                      if (!projectId) return;
+                      const next = currentFeedback === direction ? undefined : direction;
+                      setFeedbackMap(prev => {
+                        const updated = { ...prev };
+                        if (next) updated[feedbackKey] = next;
+                        else delete updated[feedbackKey];
+                        return updated;
+                      });
+                      if (next) {
+                        submitCriterionFeedback(selectedCandidate.id, s.criterionName, projectId, next);
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={s.criterionId}
+                        className="group rounded-md px-2 py-2 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold flex-1 min-w-0">{s.criterionName}</span>
+                          <span className={cn('text-xs tabular-nums font-semibold shrink-0', getScoreColor(ratio * 100))}>
+                            {s.score}/{s.maxScore}
+                          </span>
+                          <div className={cn(
+                            'flex items-center gap-0.5 transition-opacity shrink-0',
+                            currentFeedback ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          )}>
+                            <button
+                              onClick={() => handleFeedback('up')}
+                              title="Score looks right"
+                              className={cn(
+                                'h-5 w-5 rounded flex items-center justify-center transition-colors',
+                                currentFeedback === 'up'
+                                  ? 'text-success bg-success/10'
+                                  : 'text-muted-foreground hover:text-success hover:bg-success/10'
+                              )}
+                            >
+                              <ThumbsUp className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => handleFeedback('down')}
+                              title="Score seems off"
+                              className={cn(
+                                'h-5 w-5 rounded flex items-center justify-center transition-colors',
+                                currentFeedback === 'down'
+                                  ? 'text-destructive bg-destructive/10'
+                                  : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                              )}
+                            >
+                              <ThumbsDown className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
+                            style={{ width: `${ratio * 100}%` }}
+                          />
+                        </div>
+                        {s.evidence && (
+                          <p className="mt-1.5 text-xs text-muted-foreground italic leading-snug">
+                            &ldquo;{s.evidence}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -31,6 +31,12 @@ export interface CandidateScore {
   evidence: string;
 }
 
+export interface AISummary {
+  strength: string;
+  weakness: string;
+  must_haves: { item: string; met: boolean }[];
+}
+
 export interface Candidate {
   id: string;
   projectId: string;
@@ -42,6 +48,7 @@ export interface Candidate {
   totalScore: number;
   scores: CandidateScore[];
   reasoning: string;
+  aiSummary?: AISummary;
   status: CandidateStatus;
   comments: string;
   confidence?: 'high' | 'medium' | 'low';

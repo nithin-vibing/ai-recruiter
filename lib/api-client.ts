@@ -178,6 +178,17 @@ export function mapCandidateRow(row: Record<string, unknown>, rank: number): Can
       evidence: cs.evidence || '',
     })),
     reasoning: (row.reasoning as string) || '',
+    aiSummary: (() => {
+      const raw = row.reasoning as string;
+      if (!raw) return undefined;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.strength && parsed.weakness && Array.isArray(parsed.must_haves)) {
+          return parsed as import('./types').AISummary;
+        }
+      } catch { /* legacy plain-text reasoning */ }
+      return undefined;
+    })(),
     confidence: (row.confidence as 'high' | 'medium' | 'low') || undefined,
     status: ((row.status as string) || 'pending') as CandidateStatus,
     comments: (row.user_comment as string) || '',

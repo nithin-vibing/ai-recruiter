@@ -81,7 +81,7 @@ async function scoreResume(
         candidate_name: parsed.candidate_name ?? null,
         score: totalScore,
         criteria_scores: parsed.criteria_scores,
-        reasoning: parsed.summary,
+        reasoning: typeof parsed.summary === 'object' ? JSON.stringify(parsed.summary) : (parsed.summary ?? ''),
         confidence: parsed.confidence,
         screening_status: 'scored',
       })
