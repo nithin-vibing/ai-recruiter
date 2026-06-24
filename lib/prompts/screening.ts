@@ -55,7 +55,6 @@ Score this resume against the rubric below. Follow these steps:
 6. Write a structured AI summary:
    - strength: 1 crisp sentence on the single strongest reason to interview this person for this specific role
    - weakness: 1 crisp sentence on the single biggest gap vs. the JD
-   - must_haves: extract 4–6 explicit must-have requirements from the JD, then mark each true/false based on the resume
 </Task>
 
 <Rubric>
@@ -84,11 +83,7 @@ Respond ONLY with this exact JSON — no other text:
   "total_score": 74.5,
   "summary": {
     "strength": "One crisp sentence on the strongest reason to hire for this role.",
-    "weakness": "One crisp sentence on the biggest gap vs. the JD.",
-    "must_haves": [
-      { "item": "Requirement from JD", "met": true },
-      { "item": "Another requirement", "met": false }
-    ]
+    "weakness": "One crisp sentence on the biggest gap vs. the JD."
   },
   "confidence": "high | medium | low"
 }`;

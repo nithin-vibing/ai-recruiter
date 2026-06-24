@@ -34,7 +34,6 @@ export interface CandidateScore {
 export interface AISummary {
   strength: string;
   weakness: string;
-  must_haves: { item: string; met: boolean }[];
 }
 
 export interface Candidate {

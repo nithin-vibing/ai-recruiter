@@ -826,25 +826,6 @@ export function ResultsTable({
                         <p className="text-xs font-semibold text-destructive uppercase tracking-wider mb-1">Weakness</p>
                         <p className="text-sm text-foreground leading-snug">{selectedCandidate.aiSummary.weakness}</p>
                       </div>
-                      {/* Must-haves checklist */}
-                      {selectedCandidate.aiSummary.must_haves.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Must-Have Checklist</p>
-                          <div className="space-y-1.5">
-                            {selectedCandidate.aiSummary.must_haves.map((mh, i) => (
-                              <div key={i} className={cn(
-                                'flex items-start gap-2.5 rounded-md px-3 py-2 text-sm',
-                                mh.met ? 'bg-success/5' : 'bg-destructive/5'
-                              )}>
-                                <span className={cn('mt-0.5 shrink-0 text-base leading-none', mh.met ? 'text-success' : 'text-destructive')}>
-                                  {mh.met ? '✓' : '✗'}
-                                </span>
-                                <span className={mh.met ? 'text-foreground' : 'text-muted-foreground'}>{mh.item}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </>
                   ) : selectedCandidate.reasoning ? (
                     /* Legacy plain-text reasoning */
