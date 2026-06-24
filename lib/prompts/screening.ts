@@ -52,7 +52,7 @@ Score this resume against the rubric below. Follow these steps:
 5. Compute total_score as a 0–100 weighted percentage:
    total_score = sum of (score / max_score × weight × 100) for all criteria
    Example: score 8/10 with weight 0.3 → contributes 8/10 × 0.3 × 100 = 24 points
-6. Write a 2-sentence summary: first sentence on biggest strength, second on biggest gap
+6. Write a 1-sentence summary (max 20 words): lead with the single strongest qualification, end with the single biggest gap. No filler.
 </Task>
 
 <Rubric>
@@ -79,7 +79,7 @@ Respond ONLY with this exact JSON — no other text:
     }
   ],
   "total_score": 74.5,
-  "summary": "Strongest aspect sentence. Biggest gap sentence.",
+  "summary": "One sentence: strength + gap, max 20 words.",
   "confidence": "high | medium | low"
 }`;
 }

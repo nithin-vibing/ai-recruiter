@@ -135,7 +135,7 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove,
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-[180px] min-w-[180px]">Criterion</TableHead>
+                <TableHead className="w-[200px] min-w-[200px]">Criterion</TableHead>
                 <TableHead className="min-w-[260px]">Description</TableHead>
                 <TableHead className="w-[90px] min-w-[90px] text-center">Max Score</TableHead>
                 <TableHead className="w-[100px] min-w-[100px] text-center">Weight %</TableHead>
@@ -146,25 +146,25 @@ export function RubricTable({ rubric, originalRubric, onRubricChange, onApprove,
               {localRubric.map((criterion, index) => (
                 <TableRow
                   key={criterion.id}
-                  className={cn('h-14', animateIn && 'animate-fade-in-row')}
+                  className={cn(animateIn && 'animate-fade-in-row')}
                   style={animateIn ? { animationDelay: `${Math.min(index, 7) * 100}ms` } : undefined}
                 >
-                  <TableCell className="py-2">
-                    <Input
+                  <TableCell className="py-2 align-top">
+                    <textarea
                       value={criterion.name}
-                      maxLength={25}
-                      title={criterion.name}
+                      maxLength={60}
+                      rows={2}
                       onChange={(e) => updateCriterion(criterion.id, 'name', e.target.value)}
-                      className="h-9 text-sm truncate"
+                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-snug shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     />
                   </TableCell>
-                  <TableCell className="py-2">
-                    <Input
+                  <TableCell className="py-2 align-top">
+                    <textarea
                       value={criterion.description}
-                      maxLength={100}
-                      title={criterion.description}
+                      maxLength={200}
+                      rows={2}
                       onChange={(e) => updateCriterion(criterion.id, 'description', e.target.value)}
-                      className="h-9 text-sm"
+                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-snug shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     />
                   </TableCell>
                   <TableCell className="py-2">

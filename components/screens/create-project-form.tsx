@@ -199,6 +199,16 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, in
                 placeholder="https://jobs.lever.co/…"
                 value={jdUrl}
                 onChange={(e) => { setJdUrl(e.target.value); setJdFetchError(null); }}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData('text');
+                  const isUrl = /^https?:\/\/\S+$/.test(pasted.trim());
+                  if (!isUrl) {
+                    e.preventDefault();
+                    setJdInputMode('text');
+                    setJobDescription(pasted);
+                    setJdFetchError(null);
+                  }
+                }}
               />
             ) : (
               <Textarea
@@ -207,6 +217,17 @@ export function CreateProjectForm({ onGenerateRubric, onSubmit, isGenerating, in
                 className="min-h-[160px] resize-y text-sm"
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData('text');
+                  const isUrl = /^https?:\/\/\S+$/.test(pasted.trim());
+                  if (isUrl) {
+                    e.preventDefault();
+                    setJdInputMode('link');
+                    setJdUrl(pasted.trim());
+                    setJobDescription('');
+                    setJdFetchError(null);
+                  }
+                }}
               />
             )}
 

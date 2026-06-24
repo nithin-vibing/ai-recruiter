@@ -782,18 +782,17 @@ export function ResultsTable({
                 <FileText className="h-3.5 w-3.5 inline mr-1.5" />
                 AI Reasoning
               </button>
-              <button
-                className={cn(
-                  'px-3 py-1.5 text-sm font-medium border-b-2 transition-colors',
-                  detailTab === 'resume'
-                    ? 'border-electric-blue text-electric-blue'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                )}
-                onClick={() => setDetailTab('resume')}
-              >
-                <ExternalLink className="h-3.5 w-3.5 inline mr-1.5" />
-                Resume
-              </button>
+              {selectedCandidate.resumeUrl && (
+                <a
+                  href={selectedCandidate.resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 inline mr-1.5" />
+                  Resume
+                </a>
+              )}
             </div>
 
             {/* Tab content */}
@@ -806,28 +805,20 @@ export function ResultsTable({
                 </div>
               )}
               {detailTab === 'reasoning' && !blindMode && (
-                <div className={cn(
-                  'h-full',
-                  selectedCandidate.scores.length > 0
-                    ? 'grid grid-cols-[1fr_1px_1fr] gap-0'
-                    : ''
-                )}>
-                  {/* Left: Summary — independently scrollable */}
-                  <div className="pr-4 h-full overflow-y-auto">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Summary</p>
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {selectedCandidate.reasoning || 'No summary available.'}
-                    </p>
-                  </div>
-
-                  {/* Divider */}
-                  {selectedCandidate.scores.length > 0 && (
-                    <div className="bg-border mx-1" />
+                <div className="h-full flex flex-col overflow-hidden">
+                  {/* Summary strip */}
+                  {selectedCandidate.reasoning && (
+                    <div className="shrink-0 px-1 pb-3 border-b mb-3">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                      <p className="text-sm text-foreground leading-snug">
+                        {selectedCandidate.reasoning}
+                      </p>
+                    </div>
                   )}
 
-                  {/* Right: Criteria breakdown — independently scrollable */}
+                  {/* Criteria breakdown — full width, scrollable */}
                   {selectedCandidate.scores.length > 0 && (
-                    <div className="pl-4 h-full overflow-y-auto space-y-1">
+                    <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Criteria Breakdown</p>
                       {selectedCandidate.scores.map((s) => {
                         const ratio = s.maxScore > 0 ? s.score / s.maxScore : 0;
@@ -837,7 +828,6 @@ export function ResultsTable({
                         const handleFeedback = (direction: 'up' | 'down') => {
                           const projectId = typeof window !== 'undefined' ? localStorage.getItem('currentProjectId') : null;
                           if (!projectId) return;
-                          // Toggle off if clicking the same direction
                           const next = currentFeedback === direction ? undefined : direction;
                           setFeedbackMap(prev => {
                             const updated = { ...prev };
@@ -853,22 +843,16 @@ export function ResultsTable({
                         return (
                           <div
                             key={s.criterionId}
-                            className="group rounded-md px-1.5 py-1.5 hover:bg-muted/50 transition-colors"
+                            className="group rounded-md px-2 py-2 hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium w-[130px] shrink-0 truncate">{s.criterionName}</span>
-                              <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
-                                <div
-                                  className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
-                                  style={{ width: `${ratio * 100}%` }}
-                                />
-                              </div>
-                              <span className={cn('text-xs tabular-nums font-semibold w-9 text-right shrink-0', getScoreColor(ratio * 100))}>
+                              <span className="text-xs font-semibold flex-1 min-w-0">{s.criterionName}</span>
+                              <span className={cn('text-xs tabular-nums font-semibold shrink-0', getScoreColor(ratio * 100))}>
                                 {s.score}/{s.maxScore}
                               </span>
-                              {/* Thumbs feedback — visible on hover or when active */}
+                              {/* Thumbs feedback */}
                               <div className={cn(
-                                'flex items-center gap-0.5 transition-opacity',
+                                'flex items-center gap-0.5 transition-opacity shrink-0',
                                 currentFeedback ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               )}>
                                 <button
@@ -897,30 +881,20 @@ export function ResultsTable({
                                 </button>
                               </div>
                             </div>
+                            <div className="mt-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={cn('h-full rounded-full', getCriterionBarColor(ratio))}
+                                style={{ width: `${ratio * 100}%` }}
+                              />
+                            </div>
                             {s.evidence && (
-                              <p className="mt-0.5 ml-[138px] text-xs text-muted-foreground/70 italic leading-snug line-clamp-2">
+                              <p className="mt-1.5 text-xs text-muted-foreground italic leading-snug">
                                 &ldquo;{s.evidence}&rdquo;
                               </p>
                             )}
                           </div>
                         );
                       })}
-                    </div>
-                  )}
-                </div>
-              )}
-              {detailTab === 'resume' && (
-                <div className="h-full flex flex-col">
-                  {selectedCandidate.resumeUrl ? (
-                    <ResumeWithHighlights
-                      resumeUrl={selectedCandidate.resumeUrl}
-                      evidenceQuotes={selectedCandidate.scores.map((s) => s.evidence).filter(Boolean)}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <FileText className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground">Resume not available for this candidate.</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">Resumes are stored when screening new projects.</p>
                     </div>
                   )}
                 </div>
